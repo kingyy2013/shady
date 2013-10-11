@@ -81,9 +81,9 @@ void MainWindow::initTools()
 
     QToolBar *toolbar = addToolBar("main toolbar");
 
-    toolbar->addAction(newGridAct);
-    toolbar->addAction(new2NGonAct);
-    toolbar->addAction(newSpineAct);
+    toolbar->addAction(shapeInsertGridAct);
+    toolbar->addAction(shapeInsert2NGonAct);
+    toolbar->addAction(shapeInsertSpineAct);
 
     toolbar->addSeparator();
 
@@ -112,6 +112,11 @@ void MainWindow::about()
 
 void MainWindow::createActions()
 {
+    //file Actions
+    fileNewAct = new QAction(tr("New"), this);
+    fileNewAct->setShortcuts(QKeySequence::New);
+    connect(fileNewAct, SIGNAL(triggered()), this, SLOT(newFile()));
+
     exitAct = new QAction(tr("E&xit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
@@ -145,7 +150,7 @@ void MainWindow::createActions()
     connect(extrudeEdgeAct, SIGNAL(triggered()), this, SLOT(selectExtrudeEdge()));
 
     extrudeFaceAct = new QAction(tr("Extrude &Face"), this);
-    extrudeFaceAct->setShortcut(tr("Ctrl+F"));
+    extrudeFaceAct->setShortcut(tr("Ctrl+Q"));
     connect(extrudeFaceAct, SIGNAL(triggered()), this, SLOT(selectExtrudeFace()));
 
     insertSegmentAct = new QAction(tr("&Insert Segment"), this);
@@ -171,27 +176,43 @@ void MainWindow::createActions()
     insertSegmentAct->setActionGroup(toolset);
     deleteFaceAct->setActionGroup(toolset);
 
-    //new meshshapes
-    newGridAct = new QAction(tr("Grid"), this);
-    connect(newGridAct, SIGNAL(triggered()), this, SLOT(newGrid()));
+    //SHAPE ACTIONS
+    shapeInsertGridAct = new QAction(tr("Grid"), this);
+    connect(shapeInsertGridAct, SIGNAL(triggered()), this, SLOT(newGrid()));
 
-    new2NGonAct = new QAction(tr("2NGon"), this);
-    connect(new2NGonAct, SIGNAL(triggered()), this, SLOT(new2NGon()));
+    shapeInsert2NGonAct = new QAction(tr("2NGon"), this);
+    connect(shapeInsert2NGonAct, SIGNAL(triggered()), this, SLOT(new2NGon()));
 
-    newSpineAct = new QAction(tr("Spine"), this);
-    connect(newSpineAct, SIGNAL(triggered()), this, SLOT(newSpine()));
+    shapeInsertSpineAct = new QAction(tr("Spine"), this);
+    connect(shapeInsertSpineAct, SIGNAL(triggered()), this, SLOT(newSpine()));
 
-    shapeLockAct = new QAction(tr("Lock"), this);
-    connect(shapeLockAct, SIGNAL(triggered()), this, SLOT(newSpine()));
+    shapeLockAct = new QAction(tr("&Lock"), this);
+    shapeLockAct->setShortcut(tr("Ctrl+L"));
+    connect(shapeLockAct, SIGNAL(triggered()), this, SLOT(toggleLockShape()));
 
-    shapeLockAct = new QAction(tr("Lock"), this);
-    connect(shapeLockAct, SIGNAL(triggered()), this, SLOT(newSpine()));
+    shapeMoveFrontAct = new QAction(tr("Move Front"), this);
+    shapeMoveFrontAct->setShortcut(Qt::Key_PageUp);
+    connect(shapeMoveFrontAct, SIGNAL(triggered()), this, SLOT(moveShapeToFront()));
+
+    shapeMoveBackAct = new QAction(tr("Move Back"), this);
+    shapeMoveBackAct->setShortcut(Qt::Key_PageDown);
+    connect(shapeMoveBackAct, SIGNAL(triggered()), this, SLOT(moveShapeToBack()));
+
+
+    shapeSendFrontAct = new QAction(tr("Send &Front"), this);
+    shapeSendFrontAct->setShortcut(tr("Ctrl+F"));
+    connect(shapeSendFrontAct, SIGNAL(triggered()), this, SLOT(sendShapeFront()));
+
+    shapeSendBackAct = new QAction(tr("Send &Back"), this);
+    shapeSendBackAct->setShortcut(tr("Ctrl+B"));
+    connect(shapeSendBackAct, SIGNAL(triggered()), this, SLOT(sendShapeBack()));
+
 }
 
 void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));   
-    fileMenu->addAction("New");
+    fileMenu->addAction(fileNewAct);
     fileMenu->addAction("Open");
     fileMenu->addAction("Save");
     fileMenu->addAction("Save as");
@@ -210,17 +231,22 @@ void MainWindow::createMenus()
     shapeMenu  = menuBar()->addMenu(tr("&Shape"));
 
     insertMenu =  shapeMenu->addMenu("Insert");
-    shapeMenu->addAction("&Lock");
+    shapeMenu->addAction(shapeLockAct);
 
-    shapeMenu->addAction("Arrange");
+    QMenu* arrangeMenu = shapeMenu->addMenu("Arrange");
+    arrangeMenu->addAction(shapeMoveFrontAct);
+    arrangeMenu->addAction(shapeMoveBackAct);
+    arrangeMenu->addAction(shapeSendFrontAct);
+    arrangeMenu->addAction(shapeSendBackAct);
+
     shapeMenu->addAction("Group");
     shapeMenu->addAction("Parent");
     shapeMenu->addAction("Transform");
     shapeMenu->addAction("Rasterize");
 
-    insertMenu->addAction(newGridAct);
-    insertMenu->addAction(new2NGonAct);
-    insertMenu->addAction(newSpineAct);
+    insertMenu->addAction(shapeInsertGridAct);
+    insertMenu->addAction(shapeInsert2NGonAct);
+    insertMenu->addAction(shapeInsertSpineAct);
 
     toolsMenu  = menuBar()->addMenu(tr("Tools"));
     toolsMenu->addAction(extrudeEdgeAct);
@@ -302,6 +328,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
     glWidget->updateGL();
 }
 
+void MainWindow::newFile(){
+    Canvas::get()->clear();
+    glWidget->updateGL();
+}
+
 
 void MainWindow::selectExtrudeEdge()
 {
@@ -355,6 +386,10 @@ void MainWindow::toggleShading(){
     glWidget->updateGL();
 }
 
+
+
+//Shape Menu Call backs
+
 void MainWindow::new2NGon()
 {
     MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::NGON);
@@ -375,17 +410,55 @@ void MainWindow::newSpine()
     //Canvas::get()->insert(pM);
 }
 
-void MainWindow::toggleLockShape()
-{
-
+void MainWindow::toggleLockShape(){
+    Shape_p shape = Canvas::get()->active();
+    if (!shape)
+        return;
+    shape->flipLock();
+    glWidget->updateGL();
 }
 
-void MainWindow::transformShape()
-{
-
+void MainWindow::transformShape(){
+    Shape_p shape = Canvas::get()->active();
+    if (!shape)
+        return;
+    //transform
+    glWidget->updateGL();
 }
 
-void MainWindow ()
-{
+void MainWindow::parentShape(){
+    Shape_p shape = Canvas::get()->active();
+     if (!shape)
+         return;
 
+
+     glWidget->updateGL();
 }
+
+void MainWindow::groupShape(){
+    Shape_p shape = Canvas::get()->active();
+     if (!shape)
+         return;
+}
+
+void MainWindow::moveShapeToFront(){
+    Canvas::get()->activeUp();
+    glWidget->updateGL();
+}
+
+void MainWindow::moveShapeToBack(){
+    Canvas::get()->activeDown();
+    glWidget->updateGL();
+}
+
+void MainWindow::sendShapeBack(){
+    Canvas::get()->sendToBack();
+    glWidget->updateGL();
+}
+
+void MainWindow::sendShapeFront(){
+    Canvas::get()->sendToFront();
+    glWidget->updateGL();
+}
+
+

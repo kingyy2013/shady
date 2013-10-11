@@ -40,23 +40,14 @@ public:
     void render(Shape_p) const;
 
     void insert(Shape_p sp){
-		_shapes.push_back(sp);
+        _shapes.push_front(sp);
 		activate(sp); 
     }
 
-    void remove(Shape_p sp){_shapes.remove(sp);
+    void remove(Shape_p sp){
+        _shapes.remove(sp);
 		_shapes.remove(sp);
 		delete sp;
-    }
-
-    void sendToFront(Shape_p sp){
-		_shapes.remove(sp);
-		_shapes.push_front(sp);
-    }
-
-    void sendToBack(Shape_p sp){
-		_shapes.remove(sp);
-		_shapes.push_back(sp);
     }
 
     Shape_p removeActive(){
@@ -113,7 +104,8 @@ public:
 		activate(*it);
     }
 
-	void activeUp(){
+    void activeDown(){
+
 		if (!_active)
 			return;
 
@@ -127,7 +119,8 @@ public:
 		(*itn) = tmp;
 	}
 
-	void activeDown(){
+    void activeUp(){
+
 		if (!_active)
 			return;
 
@@ -139,6 +132,20 @@ public:
         Shape_p tmp = *it;
 		(*it) = *itp;
 		(*itp) = tmp;
+    }
+
+    void sendToBack(){
+        if (!_active)
+            return;
+        _shapes.remove(_active);
+        _shapes.push_back(_active);
+    }
+
+    void sendToFront(){
+        if (!_active)
+            return;
+        _shapes.remove(_active);
+        _shapes.push_front(_active);
     }
 
 	void clear(){

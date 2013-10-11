@@ -62,8 +62,9 @@ public:
 
 private slots:
 
-    void about();
+    void newFile();
 
+    void about();
 
     void flipDrag();
     void unselectDrag();
@@ -85,8 +86,10 @@ private slots:
     void parentShape();
     void groupShape();
     void transformShape();
-
-
+    void moveShapeToBack();
+    void moveShapeToFront();
+    void sendShapeBack();
+    void sendShapeFront();
 
 private:
 
@@ -103,7 +106,6 @@ private:
 
     GLWidget        *glWidget;
 
-
     //Menu Pointers
     QMenu           *fileMenu;
     QMenu           *viewMenu;
@@ -115,6 +117,7 @@ private:
     QMenu           *helpMenu;
 
     QMenu           *insertMenu;
+
     //Actions
     QAction         *exitAct;
     QAction         *aboutAct;    
@@ -126,21 +129,26 @@ private:
     QAction * normalsOnAct;
     QAction * shadingOnAct;
 
-    QAction * newGridAct;
-    QAction * newSpineAct;
-    QAction * new2NGonAct;
+    //File Menu Actions
+    QAction * fileNewAct;
 
+
+    //Tools Menu Actions
     QAction * dragAct;
-
     QAction * extrudeEdgeAct;
     QAction * extrudeFaceAct;
     QAction * insertSegmentAct;
     QAction * deleteFaceAct;
 
-
+    //Shape Menu Actions
+    QAction * shapeInsert2NGonAct;
+    QAction * shapeInsertSpineAct;
+    QAction * shapeInsertGridAct;
     QAction * shapeLockAct;
     QAction * shapeMoveFrontAct;
     QAction * shapeMoveBackAct;
+    QAction * shapeSendFrontAct;
+    QAction * shapeSendBackAct;
     QAction * shapeParentAct;
     QAction * shapeTransformAct;
 

@@ -153,12 +153,13 @@ class Draggable:public Selectable{
     DraggableList _childs;
     Draggable_p _parent;
 
-
 protected:
 
     virtual void onDrag(const Point&){}
 
 public:
+
+    bool isLocked;
 
     Draggable(Type_e type, Point_p pP = 0):Selectable(type){
         if (pP){
@@ -166,6 +167,7 @@ public:
         }
         _pP = pP;
         _parent = 0;
+        isLocked = false;
     }
 
     ~Draggable(){
@@ -176,6 +178,8 @@ public:
 
     inline Point    P() const{return *_pP;}
     inline Point_p  pP() const{return _pP;}
+
+    void flipLock(){isLocked =!isLocked;}
 
     void drag(const Point& t){
         _pP->set(*_pP + t);
@@ -205,7 +209,10 @@ public:
 
         if (!Selectable::getTheSelected() || !Selectable::getTheSelected()->isDraggable())
             return false;
-        ((Draggable_p)Selectable::getTheSelected())->drag(t);
+        Draggable_p dragged = ((Draggable_p)Selectable::getTheSelected());
+        if (dragged->isLocked)
+            return false;
+        dragged->drag(t);
         return true;
     }
 
