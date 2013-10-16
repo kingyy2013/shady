@@ -67,7 +67,7 @@ public:
     void render() const;
 
     Patch4(Face_p);
-    ~Patch4();
+    //~Patch4();
 
     void interpolateNormals();
 

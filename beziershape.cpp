@@ -6,8 +6,15 @@ void MeshShape::onUpdate(){
 
     EdgeList edges = _control->edges();
     FOR_ALL_CONST_ITEMS(EdgeList, edges){
-        if ((*it)->curve)
-            (*it)->curve->update();
+        Edge_p e = (*it);
+
+        if (e->isBorder()){
+
+        }
+
+        if (e->curve)
+            e->curve->update();
+
     }
 
     FaceList faces = _control->faces();
@@ -39,11 +46,8 @@ void MeshShape::onUpdate(){
 }
 
 void MeshShape::fixCurve(Edge_p e){
-
     if (!e->curve)
         return;
-
-
 }
 
 Bezier* initCurve(Edge_p e){
@@ -55,12 +59,19 @@ Bezier* initCurve(Edge_p e){
     Vertex_p v1 = e->C0()->next()->V();
     Point p0 = *v0->pP;
     Point p1 = *v1->pP;
-    Vec2 tan = p1 - p0;
+
+    Vec2 tan0 = p1 - p0;
+    Vec2 tan1 = p0 - p1;
+
+    if (MeshShape::isSMOOTH && e->isBorder()){
+        tan0 = p1 - (*e->C0()->prev()->V()->pP);
+        tan1 = p0 - (*e->C0()->next()->next()->V()->pP);
+    }
 
     MeshShape* shape = (MeshShape*) e->mesh()->caller();
 
-    Point_p p0_t = new Point(p0 + tan*0.25);
-    Point_p p1_t = new Point(p1 - tan*0.25);
+    Point_p p0_t = new Point(p0 + tan0*0.25);
+    Point_p p1_t = new Point(p1 + tan1*0.25);
 
     Bezier* c = new Bezier(100);
     e->curve = c;
@@ -73,16 +84,36 @@ Bezier* initCurve(Edge_p e){
     if (!cp0)
         cp0 = shape->addControl(v0);
 
-    ControlPoint_p cp0_t = shape->addControl(p0_t);
-    cp0->adopt(cp0_t);
+    ControlTangent_p cp0_tan = (ControlTangent_p)shape->addControl(p0_t, cp0);
 
 
     ControlPoint_p cp1 = (ControlPoint_p)v1->pData;;
     if (!cp1)
         cp1 = shape->addControl(v1);
 
-    ControlPoint_p cp1_t = shape->addControl(p1_t);
-    cp1->adopt(cp1_t);
+    ControlTangent_p cp1_tan = (ControlTangent_p) shape->addControl(p1_t, cp1);
+
+    if (MeshShape::isSMOOTH && e->isBorder()){
+
+        //cp0_tan->setPair();
+        Edge_p e0 = e->C0()->prev()->E();
+        if ( e0 && e0->isBorder() && e0->curve){
+            ControlTangent_p pair = (ControlTangent_p)shape->findControl(getTanP(e0, e->C0()));
+            cp0_tan->setPair(pair);
+            tan0 = tan0.normalize();
+            e->C0()->V()->pN->set( Vec3(0,0,1)%Vec3(tan0.x, tan0.y, 0));
+            shape->findControl(e->C0()->V()->pN)->updatePos();
+        }
+
+        Edge_p e1 = e->C0()->next()->E();
+        if ( e1 && e1->isBorder() && e1->curve){
+            ControlTangent_p pair = (ControlTangent_p)shape->findControl(getTanP(e1, e->C0()->next()));
+            cp1_tan->setPair(pair);
+            tan1 = -tan1.normalize();
+            e->C0()->next()->V()->pN->set( Vec3(0,0,1)%Vec3(tan1.x, tan1.y, 0));
+            shape->findControl(e->C0()->next()->V()->pN)->updatePos();
+        }
+    }
 
     c->pRef = (void*) e;
     return c;
@@ -97,19 +128,19 @@ void onAddFace(Face_p pF)
     pF->surface = (Patch*)new Patch4(pF);
 }
 
-void MeshShape::onSplitEdge(Corner_p c,double t)
+void MeshShape::onSplitEdge(Corner_p c, double t)
 {
+    c = c->isC0()? c : c->vNext();
 
     c->F()->Face::update(true);
     if (c->other())
         c->other()->F()->Face::update(true);
 
-
-    bool isForward = (c->prev()->V()->pP == c->prev()->E()->curve->pCV(0));
-
-    Edge_p e0 = (isForward)? c->prev()->E() : c->E();
-
+    Edge_p e0 = c->prev()->E();
     Bezier* curve0 = e0->curve;
+
+    bool isForward = (c->prev()->V()->pP == curve0->pCV(0));
+
 
     Point newCP[7];
     curve0->calculateDivideCV(t, newCP);
@@ -117,8 +148,9 @@ void MeshShape::onSplitEdge(Corner_p c,double t)
     ControlPoint_p cptan    = getController()->findControl(e0->curve->pCV(isForward?2:1));
     ControlPoint_p cp       = getController()->findControl(c->V()->pP);
 
-    if (!cp || !cptan) // throw exception
+    if (!cp || !cptan){ // throw exception
         return;
+    }
 
     cptan->unparent();
     cp->adopt(cptan);
@@ -143,5 +175,4 @@ void MeshShape::onSplitEdge(Corner_p c,double t)
     if (cpnorm){
         cpnorm->pP()->set(*c->V()->pP);
     }
-
 }

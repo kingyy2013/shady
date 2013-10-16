@@ -224,6 +224,7 @@ public:
 	void set(int i){_i = i;}
 
 	bool isC0();
+    bool isBorder();
 
 };
 

@@ -192,6 +192,8 @@ Corner_p Corner::other(){
 }
 
 bool Corner::isC0(){return this == _e->C0();}
+bool Corner::isBorder(){return _e->isBorder() ||  _prev->_e->isBorder();}
+
 
 void Vertex::set(Corner_p c){
     _c = c;

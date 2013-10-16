@@ -42,8 +42,10 @@ public:
     MeshShape(Mesh_p control = 0);
 
     //ui item????
-    ControlPoint_p addControl(Point_p);
+    ControlPoint_p addControl(Point_p, ControlPoint_p pParent = 0);
     ControlPoint_p addControl(Vertex_p);
+    ControlPoint_p findControl(Point_p pP);
+    ControlNormal_p findControl(Normal_p pN);
 
     //static stuff
     enum OPERATION_e {NONE, EXTRUDE_EDGE, EXTRUDE_FACE, DELETE_FACE, SPLIT_FACE, INSERT_SEGMENT};
@@ -65,6 +67,8 @@ public:
 
     static MeshShape* newMeshShape(const Point&p, PRIMITIVE_e prim = SQUARE);
 
+    static bool isSMOOTH;
+
 private:
 
     static OPERATION_e _OPMODE;
@@ -76,6 +80,8 @@ void onAddFace(Face_p);
 
 
 Bezier* initCurve(Edge_p);
+
+Point_p getTanP(Edge_p, Corner_p);
 
 
 #endif // MESHSHAPE_H

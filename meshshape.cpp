@@ -2,7 +2,8 @@
 #include "curve.h"
 
 double MeshShape::EXTRUDE_T = 0.25;
-MeshShape::OPERATION_e MeshShape::_OPMODE       = MeshShape::EXTRUDE_EDGE;
+MeshShape::OPERATION_e MeshShape::_OPMODE = MeshShape::EXTRUDE_EDGE;
+bool MeshShape::isSMOOTH = true;
 
 MeshShape::MeshShape(Mesh_p control)
 {
@@ -69,10 +70,9 @@ void MeshShape::onClick(const Point & p, Click_e eClick){
     if (eClick == UP){
         execOP(p);
     }
-
-    update();
 }
 
+//all operations on meshshape needs to be made static to allow operation on all layers
 void MeshShape::execOP(const Point &p){
 
     Selectable_p obj = Selectable::getLastSelected();
@@ -82,6 +82,14 @@ void MeshShape::execOP(const Point &p){
 
     Edge_p e = (Edge_p)obj->pRef;
     Face_p f = (Face_p)obj->pRef;
+
+    MeshShape* mesh = 0;
+
+    if (_OPMODE == EXTRUDE_EDGE || _OPMODE == INSERT_SEGMENT){
+         mesh = ((MeshShape*)e->mesh()->caller());
+    }else if (_OPMODE == EXTRUDE_FACE || _OPMODE == DELETE_FACE){
+         mesh = ((MeshShape*)f->mesh()->caller());
+    }
 
     if ( !e && !f)
         return;
@@ -112,6 +120,10 @@ void MeshShape::execOP(const Point &p){
         break;
 
     }
+
+    if (mesh)
+        mesh->update();
+
 }
 
 void MeshShape::insertSegment(Edge_p e, const Point & p){
@@ -124,6 +136,7 @@ void MeshShape::insertSegment(Edge_p e, const Point & p){
     double t = 0.5;
     //((Curve*)e->curve)->computeDistance(p, t);
 
+    Curve* curve = e->curve;
     Corner* c0 = pMesh->splitEdge(e, pMesh->addVertex(new Point(), new Normal(0,0,1) ) );
     onSplitEdge(c0, t);
 
@@ -232,7 +245,7 @@ Edge_p MeshShape::extrude(Edge_p e0, double t){
     //insert edges
     e0->set(f->C(0));
     pMesh->addEdge(f->C(1), 0); //e1
-    Edge_p e2 = _control->addEdge(f->C(2), 0);
+    Edge_p e2 = pMesh->addEdge(f->C(2), 0);
     pMesh->addEdge(f->C(3), 0); //e3
 
     f->Face::update();
@@ -248,6 +261,12 @@ void MeshShape::deleteFace(Face_p f){
     for(int i=0; i<f->size(); i++){
         if (f->C(i)->E()->isBorder() && f->C(i-1)->E()->isBorder()){
             getController()->removeControl(f->C(i)->V()->pP);
+            getController()->removeControl(f->C(i)->V()->pN);
+        }
+        if (f->C(i)->E()->isBorder()){
+            getController()->removeControl(f->C(i)->E()->curve->pCV(1));
+            getController()->removeControl(f->C(i)->E()->curve->pCV(2));
+            delete f->C(i)->E()->curve;
         }
     }
 
@@ -290,18 +309,45 @@ void MeshShape::insertNGon(const Point& p, int n, double rad){
     _control->buildEdges();
 }
 
-ControlPoint_p MeshShape::addControl(Point_p pP){
+ControlPoint_p MeshShape::addControl(Point_p pP, ControlPoint_p pParent){
+    if (pParent)
+           return getController()->addControlTangent(pParent, pP);
+
     return getController()->addControl(pP);
+}
+
+ControlPoint_p MeshShape::findControl(Point_p pP){
+    return getController()->findControl(pP);
+}
+
+ControlNormal_p MeshShape::findControl(Normal_p pN){
+    return getController()->findControl(pN);
 }
 
 ControlPoint_p MeshShape::addControl(Vertex_p pV){
     ControlPoint_p cp = getController()->addControl(pV->pP);
     pV->pData = (void*) cp;
     cp->pV = pV;
-    getController()->addControl(cp, pV->pN);
+    getController()->addControlNormal(cp, pV->pN);
     return cp;
 }
 
 void MeshShape::setOPMODE(OPERATION_e eMode){
     _OPMODE = eMode;
+}
+
+Point_p getTanP(Edge_p pE, Corner_p pC)
+{
+    if (!pE->curve)
+        return 0;
+
+    bool isForward = (pE->curve->pCV(0) == pE->C0()->V()->pP);
+
+    if (pE->C0() == pC){
+        return pE->curve->pCV( isForward?1:2);
+    }else if (pE->C0()->next() == pC){
+        return pE->curve->pCV( isForward?2:1);
+    }
+
+    return 0;
 }

@@ -7,6 +7,7 @@
 
 class ControlPoint;
 class ControlNormal;
+class ControlTangent;
 
 typedef ControlPoint* ControlPoint_p;
 typedef std::list<ControlPoint_p> CPList;
@@ -14,12 +15,15 @@ typedef std::list<ControlPoint_p> CPList;
 typedef ControlNormal* ControlNormal_p;
 typedef std::list<ControlNormal_p> CNList;
 
+typedef ControlTangent* ControlTangent_p;
+
 class ControlPoint: public Draggable{
 
-    Selectable_p _pControlled;
     static ControlPoint_p _pTheActive;
 
 protected:
+
+    Selectable_p _pControlled;
 
     void onDown(){
         if (isChild())
@@ -32,7 +36,7 @@ protected:
         if (isParent()){
             DraggableList childs = getChilds();
             for(DraggableList::iterator it = childs.begin(); it!= childs.end(); it++)
-                (*it)->drag(t);
+                (*it)->pP()->set((*it)->P() + t);
         }
 
         if (_pControlled)
@@ -79,9 +83,11 @@ protected:
         ControlPoint::onDrag(t);
     }
 
-public:
+    void onUpdate(){
+        pP()->set( parent()->P() + Vec2(_pN->x, _pN->y) );
+    }
 
-    dlfl::Vertex_p pV;
+public:
 
     ControlNormal(ControlPoint_p pParent, Normal_p pN, Selectable_p pControlled):ControlPoint(new Point(), pControlled){
         pV  =   0;
@@ -93,9 +99,74 @@ public:
 
     void render() const;
 
+    void updatePos(){
+         pP()->set( parent()->P() + Vec2(_pN->x, _pN->y)*NORMAL_RAD );
+    }
+
     inline Normal_p pN()const{return _pN;}
 
 };
+
+
+class ControlTangent: public ControlPoint{
+
+
+    ControlTangent_p _pPair;
+
+protected:
+
+   void onDrag(const Vec2& t){ // move the children
+
+        if (_pPair){
+
+            Vec2 tan  = (parent()->P() - P()).normalize();
+           _pPair->pP()->set(parent()->P() + tan*(_pPair->P() - parent()->P()).norm());
+           ControlNormal_p cn = (ControlNormal_p)parent()->getChilds().front(); //not the best way to get the normal controller
+           Vec2 n2d(cn->pN()->x, cn->pN()->y);
+
+           Vec2 tan0 = (parent()->P() - P() + t).normalize();
+           Vec2 y_ax0 = Vec3(0,0,1)%Vec3(tan0.x, tan0.y, 0);
+           Vec2 y_ax1 = Vec3(0,0,1)%Vec3(tan.x, tan.y, 0);
+
+           Vec2 n2d_1 = tan*(tan0*n2d) + y_ax1*(y_ax0*n2d);
+           Vec3 n3d(n2d_1.x, n2d_1.y, cn->pN()->z);
+           n3d = n3d.normalize();
+
+           cn->pN()->set(n3d);
+           cn->updatePos();
+        }
+
+        if (_pControlled)
+            _pControlled->update();
+    }
+
+public:
+
+   ControlTangent(ControlPoint_p pParent, Point_p pP, Selectable_p pControlled):ControlPoint(pP, pControlled){
+       pV = 0;
+       pParent->adopt(this);
+       isMarked = false;
+       _pPair = 0;
+   }
+
+   ~ControlTangent(){
+
+       setPair();
+
+   }
+
+   void setPair(ControlTangent_p pair = 0){
+
+       if (pair)
+           pair->_pPair = this;
+       else if (_pPair)
+           _pPair->_pPair = 0; //break
+
+       _pPair = pair;
+   }
+
+};
+
 
 typedef class UIController: public Renderable{
 
@@ -116,7 +187,13 @@ public:
         return cp;
     }
 
-    ControlPoint_p addControl(ControlPoint_p pParent, Normal_p pN){
+    ControlTangent_p addControlTangent(ControlPoint_p pParent, Point_p pP){
+        ControlTangent_p cp = new ControlTangent(pParent, pP, _pControlled);
+        _controlPs.push_back(cp);
+        return cp;
+    }
+
+    ControlPoint_p addControlNormal(ControlPoint_p pParent, Normal_p pN){
         ControlNormal_p cn = new ControlNormal(pParent, pN, _pControlled);
         _controlNs.push_back(cn);
         return cn;

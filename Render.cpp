@@ -130,37 +130,39 @@ void ControlPoint::render() const {
     glVertex3f(P().x, P().y, 0);
     glEnd();
 
-    //not selectable
 
-    if (isInRenderMode() && isActive() && isParent()){
-        //render lines
-
-         glColor3f(1.0, 1.0, 1.0);
-         glLineWidth(1.0);
-
-         DraggableList childs = getChilds();
-         glBegin(GL_LINES);
-         Point p0 = P();
-         FOR_ALL_CONST_ITEMS(DraggableList, childs){
-             Point p1 = (*it)->P();
-             glVertex3f(p0.x, p0.y, 0);
-             glVertex3f(p1.x, p1.y, 0);
-         }
-         glEnd();
+    if (isChild() && isInRenderMode()){
+        glBegin(GL_LINES);
+        Point p0 = P();
+        Point p1 = parent()->P();
+        glVertex3f(p0.x, p0.y, 0);
+        glVertex3f(p1.x, p1.y, 0);
+        glEnd();
     }
 }
 
 
 void ControlNormal::render() const {
 
-    if ( (Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE ==Canvas::POINT_NORMAL_SHAPE_M) && !isActive() )
+    if (!Canvas::get()->isNormalsOn || !isActive() )
         return;
+
+    //if ( (Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M) && !isActive() ) return;
 
     glColor3f(1.0, 0, 0);
     glPointSize(7.0);
     glBegin(GL_POINTS);
     glVertex3f(P().x, P().y, 0);
     glEnd();
+
+    if (isChild() && isInRenderMode()){
+        glBegin(GL_LINES);
+        Point p0 = P();
+        Point p1 = parent()->P();
+        glVertex3f(p0.x, p0.y, 0);
+        glVertex3f(p1.x, p1.y, 0);
+        glEnd();
+    }
 }
 
 void SpineShape::render() const{
@@ -276,25 +278,27 @@ void Patch4::render() const{
                 continue;
             }
 
-            if (Canvas::MODE == Canvas::NORMAL_M || Canvas::get()->isNormalsOn){
-                //drawNormals
-                glColor3f(1,1,1);
-                glPointSize(4.0);
 
-                for(int j=0; j < NN; j++){
-                    Vec3 p0 = _ps[j];
-                    Vec3 p1 = p0 + _ns[j]*NORMAL_RAD;
+
+            if (Canvas::get()->isWireframeOn){
+
+                if (Canvas::MODE == Canvas::NORMAL_M || Canvas::get()->isNormalsOn)
+                {
+                    //drawNormals
+                    glColor3f(1,1,1);
+                    glPointSize(4.0);
+
+                    Vec3 p0 = p[0];
+                    Vec3 p1 = p0 + n[0]*NORMAL_RAD;
                     glBegin(GL_LINES);
                     glVertex3f(p0.x, p0.y, p0.z);
                     glVertex3f(p1.x, p1.y, p1.z);
                     glEnd();
+
                     glBegin(GL_POINTS);
                     glVertex3f(p0.x, p0.y, p0.z);
                     glEnd();
-                }                
-            }
-
-            if (Canvas::get()->isWireframeOn){
+                }
 
                 glColor3f(1.0,1.0,1.0);
                 glLineWidth(0.5);

@@ -92,7 +92,7 @@ public:
         _COUNT++;
     }
 
-    ~Selectable(){
+    virtual ~Selectable(){
         _selectables.erase(_name);
     }
 
@@ -170,7 +170,7 @@ public:
         isLocked = false;
     }
 
-    ~Draggable(){
+   virtual ~Draggable(){
         unparent();
         for(list<Draggable_p>::iterator it = _childs.begin(); it!= _childs.end(); it++)
             (*it)->_parent = 0;
