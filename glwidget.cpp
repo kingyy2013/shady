@@ -145,7 +145,7 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
         if (Canvas::get()->canDragShape() && pSel->type() == Renderable::SHAPE){
             Canvas::get()->activate((Shape_p)pSel);
         }
-        Selectable::startSelect(pSel);
+        Selectable::startSelect(pSel, event->button() == Qt::LeftButton, event->modifiers() & Qt::ControlModifier);
     }
 
     //send the click to the active shape

@@ -11,6 +11,30 @@ class Shape;
 typedef Shape* Shape_p;
 typedef std::list<Shape_p> ShapeList;
 
+struct ShapeVertex{
+
+    Point           P;
+    Normal          N;
+    ControlPoint_p  pCP;
+    Shape_p         pShape;
+
+    ShapeVertex(Shape_p pS){
+        pShape = pS;
+        pCP = 0;
+    }
+
+    ~ShapeVertex(){
+        delete pCP;
+    }
+
+    inline Point_p  pP(){return &P;}
+    inline Normal_p pN(){return &N;}
+
+};
+
+typedef ShapeVertex* ShapeVertex_p;
+typedef std::list<ShapeVertex_p> SVList;
+
 class Shape:public Draggable{
 
     Point _t0;
@@ -20,6 +44,8 @@ class Shape:public Draggable{
     void * _param;
 
     UIController_p _pController;
+
+    SVList _vertices;
 
 protected:
     virtual void onClick(const Point&, Click_e){}
@@ -36,6 +62,28 @@ public:
     void renderAll() const {
         _pController->render();
         renderNamed(true);
+    }
+
+    ShapeVertex_p addVertex()
+    {
+        ShapeVertex_p sv = new ShapeVertex(this);
+        _vertices.push_back(sv);
+        return sv;
+    }
+
+    void removeVertex(ShapeVertex_p sv){
+        _vertices.remove(sv);
+        delete sv;
+    }
+
+    void removeVertex(Point_p pP){
+        SVList::iterator it = _vertices.begin();
+        for(;it!=_vertices.end() && (*it)->pP() != pP; it++);
+        if (it!=_vertices.end()){
+            ShapeVertex_p sv =*it;
+            _vertices.erase(it);
+            delete sv;
+        }
     }
 
 	//send generic command to the shape

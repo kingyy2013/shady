@@ -6,26 +6,17 @@
 
 using namespace dlfl;
 
+inline Point P0(Corner_p pC) {return *pC->V()->pP;}
+inline Point P0(Edge_p pE)  {return *pE->C0()->V()->pP;}
+inline Point P1(Edge_p pE)  {return *pE->C0()->next()->V()->pP;}
+
 class MeshShape : public Shape
 {
     Mesh_p _control;
     //void generateControlPoints();
 
-    void insertSegment(Edge_p, const Point&);
-    void diagonalDivide(Corner_p);
-    Face_p extrude(Face_p, double);
-    Edge_p extrude(Edge_p, double);
-    void deleteFace(Face_p);
-
-    inline Point P(Corner_p pC) const {return *pC->V()->pP;}
-    inline Point P0(Edge_p pE)  const {return *pE->C0()->V()->pP;}
-    inline Point P1(Edge_p pE)  const {return *pE->C0()->next()->V()->pP;}
-
-
-    void onSplitEdge(Corner_p, double t);
-    void fixCurve(Edge_p);
-
 protected:
+
     //overridden functions
     void render() const;
     void onClick(const Point &, Click_e);
@@ -42,10 +33,11 @@ public:
     MeshShape(Mesh_p control = 0);
 
     //ui item????
-    ControlPoint_p addControl(Point_p, ControlPoint_p pParent = 0);
-    ControlPoint_p addControl(Vertex_p);
-    ControlPoint_p findControl(Point_p pP);
-    ControlNormal_p findControl(Normal_p pN);
+    ControlPoint_p      addControl(Point_p, ControlPoint_p pParent = 0);
+    ControlPoint_p      addControl(Vertex_p);
+    ControlPoint_p      findControl(Point_p pP);
+    ControlNormal_p     findControl(Normal_p pN);
+
 
     //static stuff
     enum OPERATION_e {NONE, EXTRUDE_EDGE, EXTRUDE_FACE, DELETE_FACE, SPLIT_FACE, INSERT_SEGMENT};
@@ -72,6 +64,17 @@ public:
 private:
 
     static OPERATION_e _OPMODE;
+
+    //mesh operations
+    static void             insertSegment(Edge_p, const Point&);
+    static void             diagonalDivide(Corner_p);
+    static Face_p           extrude(Face_p, double);
+    static Edge_p           extrude(Edge_p, double);
+    static void             deleteFace(Face_p);
+
+    static void             onSplitEdge(Corner_p, double t);
+    static void             fixCurve(Edge_p);
+
 
 };
 

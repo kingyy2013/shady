@@ -45,11 +45,14 @@ protected:
 
 public:
 
-    dlfl::Vertex_p pV;
+    dlfl::Vertex_p  pV;
+    ShapeVertex_p   pSV;
+
     bool isMarked;
 
     ControlPoint(Point_p pP, Selectable_p pControlled):Draggable(Renderable::UI, pP), _pControlled(pControlled){
-        pV = 0;
+        pV       = 0;
+        pSV      = 0;
         isMarked = false;
     }
     void render() const;
@@ -117,6 +120,12 @@ protected:
 
    void onDrag(const Vec2& t){ // move the children
 
+        if (!_pPair && Selectable::selectionSize()){
+            ControlPoint_p cp = (ControlPoint_p) *Selectable::getSelection().begin();
+            if (cp!=this && cp->isChild() && cp->parent() == parent() && cp!=cp->parent()->getChilds().front()) // child of same parent that is not a normal control
+                setPair((ControlTangent_p)cp);
+        }
+
         if (_pPair){
 
             Vec2 tan  = (parent()->P() - P()).normalize();
@@ -140,6 +149,12 @@ protected:
             _pControlled->update();
     }
 
+   void onUp(){
+       if (_pPair && !Selectable::isSelect){ //break on right click
+           setPair();
+       }
+   }
+
 public:
 
    ControlTangent(ControlPoint_p pParent, Point_p pP, Selectable_p pControlled):ControlPoint(pP, pControlled){
@@ -148,6 +163,15 @@ public:
        isMarked = false;
        _pPair = 0;
    }
+
+   void setTangent(const Vec2 tan, bool bothpairs=false){
+       pP()->set(parent()->P()+tan);
+       if (bothpairs && _pPair){
+           _pPair->pP()->set(parent()->P()-tan);
+       }
+   }
+
+   Vec2 getTangent() const { return P() - parent()->P();}
 
    ~ControlTangent(){
 

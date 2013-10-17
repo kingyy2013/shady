@@ -88,8 +88,7 @@ public:
     enum Click_e{UP, DOWN, R_UP, R_DOWN};
 
     Selectable(Type_e type):Renderable(type){
-        _name = _COUNT;
-        //_name = (type << TYPE_BIT) | _COUNT;
+        _name = (type << TYPE_BIT) | _COUNT;
         _selectables[_name] = this;
         _isDraggable = false;
         _COUNT++;
@@ -104,13 +103,11 @@ public:
         render();
     }
 
-    inline bool isDraggable() const{return _isDraggable;}
-    inline void makeDraggable(){_isDraggable = true;}
-
     int name() const{return _name;}
     inline bool isTheSelected() const {return this == _theSelected;}
-    inline bool isInSelection() const {return _selection.find((Selectable_p)this) != _selection.cend();}
-
+    inline bool isInSelection()  {const Selectable_p sel = this; return this == _theSelected || _selection.find(sel) != _selection.cend();}
+    inline bool isDraggable() const{return _isDraggable;}
+    inline void makeDraggable(){_isDraggable = true;}
 
     //statics
     static Selectable_p get(int iname){
@@ -122,25 +119,18 @@ public:
 
     static Selectable_p getTheSelected(){return _theSelected;}
     static Selectable_p getLastSelected(){return _lastSelected;}
-    static SelectionSet getSelection(){return _selection;}
-    static int selectionSize(){return _selection.size();}
 
-    static void startSelect(Selectable_p pObj, bool isselect, bool isMultiSelect)
+    static void startSelect(Selectable_p pObj, bool isMultiSelect = false)
     {
-        isSelect = isselect;
         _theSelected = pObj;
-
-        if (pObj)
-            pObj->onDown();
+        if (_theSelected)
+            _theSelected->onDown();
         else
             return;
 
-        if (isMultiSelect){
-            if (isSelect)
-                _selection.insert(pObj);
-            else
-                _selection.erase(pObj);
-        }else
+        if (isMultiSelect)
+            _selection.insert(pObj);
+        else
             _selection.clear();
     }
 
@@ -157,7 +147,6 @@ public:
         _COUNT = 0;
     }
 
-    static bool isSelect;
 
 private:
 
@@ -257,8 +246,5 @@ namespace dlfl {
     typedef Mesh*       Mesh_p;
 
 }
-
-struct ShapeVertex;
-typedef ShapeVertex* ShapeVertex_p;
 
 #endif

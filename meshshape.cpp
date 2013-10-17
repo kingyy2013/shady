@@ -185,8 +185,13 @@ Face_p MeshShape::extrude(Face_p f0, double t){
 
     Point pmid;//init as centroid of P
 
+     for(int i=0; i<f0->size(); i++){
+         pmid = pmid + *f0->C(i)->V()->pP;
+     }
+     pmid = pmid*(1.0/f0->size());
+
     for(int i=0; i<f0->size(); i++){
-        Point p = P(f0->C(i)) * (1-t) + pmid * t;
+        Point p = P0(f0->C(i)) * (1-t) + pmid * t;
         f1->set(pMesh->addVertex(new Point(p), new Normal(0,0,1)), i);
     }
 
@@ -258,14 +263,16 @@ void MeshShape::deleteFace(Face_p f){
     if (!f)
         return;
 
+    MeshShape* pMS = (MeshShape*)f->mesh()->caller();
+
     for(int i=0; i<f->size(); i++){
         if (f->C(i)->E()->isBorder() && f->C(i-1)->E()->isBorder()){
-            getController()->removeControl(f->C(i)->V()->pP);
-            getController()->removeControl(f->C(i)->V()->pN);
+            pMS->getController()->removeControl(f->C(i)->V()->pP);
+            pMS->getController()->removeControl(f->C(i)->V()->pN);
         }
         if (f->C(i)->E()->isBorder()){
-            getController()->removeControl(f->C(i)->E()->curve->pCV(1));
-            getController()->removeControl(f->C(i)->E()->curve->pCV(2));
+            pMS->getController()->removeControl(f->C(i)->E()->curve->pCV(1));
+            pMS->getController()->removeControl(f->C(i)->E()->curve->pCV(2));
             delete f->C(i)->E()->curve;
         }
     }

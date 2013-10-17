@@ -12,8 +12,6 @@ int Selectable::_COUNT = 0;
 Selectable_p Selectable::_theSelected = 0;
 Selectable_p Selectable::_lastSelected = 0;
 SelectableMap Selectable::_selectables;
-SelectionSet Selectable::_selection;
-bool Selectable::isSelect;
 ControlPoint_p ControlPoint::_pTheActive = 0;
 
 Canvas::EditMode_e Canvas::MODE = Canvas::POINT_NORMAL_SHAPE_M;
@@ -41,16 +39,10 @@ Selectable_p select(GLint hits, GLuint *buff){
 }
 
 inline bool selectionColor(Selectable_p pSel){
-    if (pSel->isTheSelected()){
+    if (pSel->isTheSelected())
         glColor3f(1.0, 0.1, 0);
-        return true;
-    }
     else if (pSel->isInSelection())
-    {
         glColor3f(1.0, 1.0, 0);
-        return true;
-    }
-    return false;
 }
 
 // now all renders here
@@ -132,7 +124,7 @@ void ControlPoint::render() const {
     if (isChild() && !isActive()) return;
 
     glColor3f(1.0, 1.0, 1.0);
-    selectionColor((Selectable_p)this);
+    selectionColor(this);
 
     if (isMarked)
          glColor3f(0, 1.0, 0);
@@ -246,7 +238,7 @@ void MeshShape::render(Face_p pFace) const{
 void Curve::render() const {
 
     glColor3f(1.0, 1.0, 1.0);
-    selectionColor((Selectable_p)this);
+    selectionColor(this);
     if (isTheSelected())
         glColor3f(1.0, 0, 0);
 
@@ -278,7 +270,7 @@ void Patch4::render() const{
 
             if (isInSelection())
             {
-                selectionColor((Selectable_p)this);
+                selectionColor(this);
                 glBegin(GL_POLYGON);
                 for(int k=0; k<4; k++){
                     glVertex3f(p[k].x, p[k].y, 0);

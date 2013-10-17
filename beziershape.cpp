@@ -132,6 +132,8 @@ void MeshShape::onSplitEdge(Corner_p c, double t)
 {
     c = c->isC0()? c : c->vNext();
 
+    MeshShape* pMS = (MeshShape*) c->V()->mesh()->caller();
+
     c->F()->Face::update(true);
     if (c->other())
         c->other()->F()->Face::update(true);
@@ -145,8 +147,8 @@ void MeshShape::onSplitEdge(Corner_p c, double t)
     Point newCP[7];
     curve0->calculateDivideCV(t, newCP);
 
-    ControlPoint_p cptan    = getController()->findControl(e0->curve->pCV(isForward?2:1));
-    ControlPoint_p cp       = getController()->findControl(c->V()->pP);
+    ControlPoint_p cptan    = pMS->findControl(e0->curve->pCV(isForward?2:1));
+    ControlPoint_p cp       = pMS->findControl(c->V()->pP);
 
     if (!cp || !cptan){ // throw exception
         return;
@@ -171,7 +173,7 @@ void MeshShape::onSplitEdge(Corner_p c, double t)
 
     c->V()->pN->set(0,0,1); //fix
 
-    ControlNormal_p cpnorm = getController()->findControl(c->V()->pN);
+    ControlNormal_p cpnorm = pMS->findControl(c->V()->pN);
     if (cpnorm){
         cpnorm->pP()->set(*c->V()->pP);
     }
