@@ -1,7 +1,7 @@
 #ifndef SPINESHAPE_H
 #define SPINESHAPE_H
 
-#include "shape.h"
+#include "../shape.h"
 #include "CMesh.h"
 
 class SpineShape : public Shape

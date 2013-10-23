@@ -63,14 +63,14 @@ public:
 		if (!sp)
 			return;
 		_active = sp;
-		_active->onActivate();
+        //_active->onActivate();
     }
 
 	void deactivate(){
 		if (!_active)
 			return;
-		_active->onDeactivate();
-		_active = 0;
+        //_active->onDeactivate();
+        _active = 0;
     }
 
 	void selectPrev(){

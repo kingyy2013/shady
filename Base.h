@@ -10,7 +10,9 @@
 #define TYPE_BIT 24
 
 #define FOR_ALL_ITEMS(ItemList, items) for(ItemList::iterator it = items.begin(); it != items.end(); it++)
+#define FOR_ALL_ITEMS_2(ItemList, items) for(ItemList::iterator it2 = items.begin(); it2 != items.end(); it2++)
 #define FOR_ALL_CONST_ITEMS(ItemList, items) for(ItemList::const_iterator it = items.begin(); it != items.end(); it++)
+#define FOR_ALL_CONST_ITEMS_2(ItemList, items) for(ItemList::const_iterator it2 = items.begin(); it2 != items.end(); it2++)
 #define FOR_ALL_I(size) for(int i =0; i < size; i++ )
 #define CLAMP(n, min, max) ( (n) < (min) ? (min) : ( ( (n) > (max) ) ? (max) : (n) ) )
 
@@ -35,6 +37,8 @@ typedef Vec3*   Normal_p;
 typedef std::list<Point> PointList;
 typedef std::list<Point_p> Point_pList;
 
+#define UI_BIT 31
+
 class Renderable{
 
 protected:
@@ -50,7 +54,7 @@ public:
     Type_e type() const {return _type;}
 
     void renderUpToDate(){
-        update();
+        ensureUpToDate();
         render();
     }
 
@@ -59,13 +63,17 @@ public:
         onOutdate();
     }
 
+    void ensureUpToDate(){
+        if (!_upToDate)
+            update();
+    }
+
     void update(){
-        //if (_upToDate) return;
         onUpdate();
         _upToDate = true;
     }
 
-    Void_p pRef; //genereic pointer to refering object
+    Void_p pRef; //generic pointer to refering object
 
 private:
     Type_e _type;
@@ -161,7 +169,7 @@ public:
 
 private:
 
-    static int _COUNT;
+    static int          _COUNT;
     static Selectable_p _theSelected;
     static Selectable_p _lastSelected;
     static SelectableMap _selectables;
@@ -259,6 +267,5 @@ namespace dlfl {
 }
 
 struct ShapeVertex;
-typedef ShapeVertex* ShapeVertex_p;
 
 #endif

@@ -13,17 +13,18 @@
 
 #include <list>
 
-class Vec2;
+/*class Vec2;
 class Vec3;
 class Bezier;
 class Patch;
+*/
+struct ShapeVertex;
+struct EdgeData;
+struct FaceData;
 
 namespace dlfl {
 
-typedef Vec2     VertexData;
-typedef Vec3     VertexNormal;
-typedef Bezier   EdgeData;
-typedef Patch    FaceData;
+typedef ShapeVertex VertexData;
 
 class Corner;
 class Edge;
@@ -71,7 +72,7 @@ public:
     inline int sizeF()const {return _faces.size();}
     inline int size() const	{return _verts.size();}
 
-    Vertex_p addVertex(VertexData* pP=0, VertexNormal* pN=0);
+    Vertex_p addVertex(VertexData* pData=0);
 
     Face_p addFace(int);
     Face_p addQuad(Vertex_p, Vertex_p, Vertex_p, Vertex_p); //strickly clock-wise
@@ -110,15 +111,15 @@ class Element{
 
 public:
 
-    Element(){ _mesh = 0; pData =0; }
-
-    void* pData;
+    Element(){ _mesh = 0; pStore =0; }
 
     inline int id() const {return _id;}
     Mesh* mesh()const {return _mesh;}
     bool isDeleted()const {return _isdeleted == DELETED;}
 
     const static unsigned int DELETED = 0x0AB10;
+
+    void* pStore; //generic pointer for storage
 };
 
 class Edge: public Element{
@@ -138,7 +139,7 @@ public:
     void set(Corner_p, int i=-1);
 	bool isBorder();
 
-    EdgeData* curve;
+    EdgeData* pData;
 };
 
 
@@ -163,15 +164,13 @@ public:
 
 	void update(bool links=false);
 
-    FaceData* surface;
+    FaceData* pData;
 };
 
 class Vertex: public Element{
 
     Vertex(){
         _c = 0;
-        pP = 0;
-        pN = 0;
     }
 
     friend class Mesh;
@@ -179,8 +178,7 @@ class Vertex: public Element{
 
 public:
 
-    VertexData* pP;
-    VertexNormal* pN;
+    VertexData* pData;
     //inline Point P(){return *pP;}
 
     void set(Corner_p);

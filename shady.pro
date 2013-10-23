@@ -4,16 +4,17 @@ HEADERS       = glwidget.h \
     vec/Utility.h \
     vec/Quaternion.h \
     vec/Matrix.h \
-    Base.h \
-    Shape.h \
-    Canvas.h \
-    SampleShape.h \
-    ControlPoint.h \
-    meshshape.h \
-    spineshape.h \
-    CMesh.h \
+    base.h \
+    canvas.h \
+    sampleshape.h \
+    controlpoint.h \
     curve.h \
-    Patch.h
+    shape.h \
+    meshshape/patch.h \
+    meshshape/spineshape.h \
+    meshshape/meshshape.h \
+    meshshape/meshdata.h \
+    meshshape/cMesh.h
 
 SOURCES       = glwidget.cpp \
                 main.cpp \
@@ -22,12 +23,16 @@ SOURCES       = glwidget.cpp \
     vec/Utility.cpp \
     vec/Quaternion.cpp \
     vec/Matrix.cpp \
-    Render.cpp \
-    meshshape.cpp \
-    spine.cpp \
-    CMesh.cpp \
+    render.cpp \
     curve.cpp \
-    beziershape.cpp \
-    Patch.cpp
+    shape.cpp \
+    meshshape/patch.cpp \
+    meshshape/spine.cpp \
+    meshshape/meshshape.cpp \
+    meshshape/cmesh.cpp \
+    meshshape/beziershape.cpp \
+    meshshape/meshoperations.cpp \
+    meshshape/meshprimitives.cpp \
+    uicalbacks_meshshape.cpp
 
 QT           += opengl widgets

@@ -22,7 +22,7 @@ void SpineShape::onClick(const Point & p, Click_e eClick){
         pV = new SVertex();
         pV->pP = pP;
         _verts.push_back(pV);
-        getController()->addControl(pP);
+       // getController()->addControl(pP);
     }
 
     if (_lastV){//double link
@@ -35,13 +35,16 @@ void SpineShape::onClick(const Point & p, Click_e eClick){
 
 dlfl::Vertex_p* SpineShape::getOutlineVerts(const Point& o, const Point& tan, dlfl::Mesh_p m, double rad, bool control){
 
-    dlfl::Vertex_p* vs = new dlfl::Vertex_p[2];
-    Point n = ( Vec3(0,0,1) % Vec3(tan.x, tan.y, 0) ).normalize();
-    Point_p p0 = new Point( o + n*rad );
-    Point_p p1 = new Point( o - n*rad );
+    ShapeVertex_p sv0 = addVertex();
+    ShapeVertex_p sv1 = addVertex();
 
-    vs[0] = m->addVertex(p0);
-    vs[1] = m->addVertex(p1);
+    Point n = ( Vec3(0,0,1) % Vec3(tan.x, tan.y, 0) ).normalize();
+    sv0->P = o + n*rad;
+    sv1->P = o - n*rad;
+
+    dlfl::Vertex_p* vs = new dlfl::Vertex_p[2];
+    vs[0] = m->addVertex(sv0);
+    vs[1] = m->addVertex(sv1);
 
     /*if (control){
         ControlPoint::create(this, p0);
@@ -81,7 +84,7 @@ dlfl::Mesh_p SpineShape::buildOutline(){
             for(int i = 0; i < sz; i++){
                 Point n = (branches[i]->P() - v->P()).normalize()*0.5 + (branches[(i-1+sz)%sz]->P() - v->P()).normalize()*0.5;
                 Point * p = new Point( v->P() + n*RAD*2 );
-                Vertex_p vn = omesh->addVertex(p);
+                Vertex_p vn = omesh->addVertex();//fix it !!
                 fmid->set(vn, i);
                 //ControlPoint::create(this, p);
             }

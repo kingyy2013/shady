@@ -1,8 +1,9 @@
 #ifndef PATCH_H
 #define PATCH_H
 
-#include "Base.h"
+#include "../Base.h"
 #include "CMesh.h"
+#include "MeshData.h"
 
 using namespace dlfl;
 
@@ -15,10 +16,6 @@ protected:
    Point _K[16]; //bezier surface
 
    Point   K(int ei, int i);
-
-   inline Point Pc(Corner_p pC) const {return *pC->V()->pP;}
-   inline Point P0(Edge_p pE)  const {return *pE->C0()->V()->pP;}
-   inline Point P1(Edge_p pE)  const {return *pE->C0()->next()->V()->pP;}
 
    static Vec3 decompose(const Vec3& v, const Vec3& nx);
    static Vec3 compose(const Vec3& v, const Vec3& nx);
@@ -53,7 +50,7 @@ public:
 
 };
 
-class Patch4:Patch{
+class Patch4:public Patch{
 
     inline Point P(int i, int j)const{return _ps[i + j*N];}
     Vec3    interpolateN(int, int);

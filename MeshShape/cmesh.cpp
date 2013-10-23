@@ -15,11 +15,10 @@ void Mesh::resetCB(){
     _caller = 0;
 }
 
-Vertex* Mesh::addVertex(VertexData *pP, VertexNormal *pN){
+Vertex* Mesh::addVertex(VertexData *pData){
     Vertex* v = new Vertex();
 	_verts.push_back(v);
-    v->pP = pP;
-    v->pN = pN;
+    v->pData = pData;
 	v->_mesh = this;
 	return v;
 }
@@ -202,7 +201,7 @@ void Vertex::set(Corner_p c){
 
 Face::Face(int s){
 
-    surface = 0;
+    pData = 0;
 	_size = s;
     _corns = new Corner_p[_size];
 	for(int i=0; i<_size; i++){
@@ -324,7 +323,7 @@ void Edge::remove(){
 
 Edge::Edge(){
 	_c0 = _c1 = 0;
-	curve = 0;
+    pData = 0;
 }
 
 Edge_p Mesh::insertEdge(Corner_p i_c0, Corner_p i_c1, bool updatefaces){

@@ -39,11 +39,11 @@
 ****************************************************************************/
 #include "glwidget.h"
 #include "mainwindow.h"
-#include "SampleShape.h"
-#include "spineshape.h"
-#include "meshshape.h"
-#include "Canvas.h"
-#include "Patch.h"
+#include "sampleshape.h"
+#include "meshshape/spineshape.h"
+#include "meshshape/meshshape.h"
+#include "canvas.h"
+#include "meshshape/Patch.h"
 
 #include <QtWidgets>
 
@@ -81,13 +81,12 @@ void MainWindow::initTools()
 
     QToolBar *toolbar = addToolBar("main toolbar");
 
+    toolbar->addAction(dragAct);
+    toolbar->addSeparator();
+
     toolbar->addAction(shapeInsertGridAct);
     toolbar->addAction(shapeInsert2NGonAct);
     toolbar->addAction(shapeInsertSpineAct);
-
-    toolbar->addSeparator();
-
-    toolbar->addAction(dragAct);
 
     toolbar->addSeparator();
 
@@ -207,6 +206,10 @@ void MainWindow::createActions()
     shapeSendBackAct->setShortcut(tr("Ctrl+B"));
     connect(shapeSendBackAct, SIGNAL(triggered()), this, SLOT(sendShapeBack()));
 
+    shapeDeleteAct = new QAction(tr("Delete"), this);
+    shapeDeleteAct->setShortcut(Qt::Key_Delete);
+    connect(shapeDeleteAct, SIGNAL(triggered()), this, SLOT(deleteShape()));
+
 }
 
 void MainWindow::createMenus()
@@ -232,6 +235,7 @@ void MainWindow::createMenus()
 
     insertMenu =  shapeMenu->addMenu("Insert");
     shapeMenu->addAction(shapeLockAct);
+    shapeMenu->addAction(shapeDeleteAct);
 
     QMenu* arrangeMenu = shapeMenu->addMenu("Arrange");
     arrangeMenu->addAction(shapeMoveFrontAct);
@@ -297,65 +301,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
 
     int key = event->key();
 
-    if (key > 48 && key < 57 )
+    /*if (key > 48 && key < 57 )
     {
         Canvas::MODE = (Canvas::EditMode_e)(key - 49);
-    }
-
-    switch(key){
-
-        case Qt::Key_Delete :
-             Canvas::get()->removeActive();
-        break;
-
-        case Qt::Key_N:
-            {
-                MeshShape* ms = new MeshShape();
-                Canvas::get()->insert(ms);
-                Canvas::get()->activate(ms);
-            }
-        break;
-
-       case Qt::Key_PageUp:
-            Canvas::get()->activeUp();
-       break;
-
-        case Qt::Key_PageDown:
-             Canvas::get()->activeDown();
-        break;
-
-    }
+    }*/
     glWidget->updateGL();
 }
 
 void MainWindow::newFile(){
     Canvas::get()->clear();
     glWidget->updateGL();
-}
-
-
-void MainWindow::selectExtrudeEdge()
-{
-    MeshShape::setOPMODE(MeshShape::EXTRUDE_EDGE);
-    unselectDrag();
-}
-
-void MainWindow::selectExtrudeFace()
-{
-    MeshShape::setOPMODE(MeshShape::EXTRUDE_FACE);
-    unselectDrag();
-}
-
-void MainWindow::selectDeleteFace()
-{
-    MeshShape::setOPMODE(MeshShape::DELETE_FACE);
-    unselectDrag();
-}
-
-void MainWindow::selectInsertSegment()
-{
-    MeshShape::setOPMODE(MeshShape::INSERT_SEGMENT);
-    unselectDrag();
 }
 
 void MainWindow::flipDrag()
@@ -387,29 +342,7 @@ void MainWindow::toggleShading(){
 }
 
 
-
 //Shape Menu Call backs
-
-void MainWindow::new2NGon()
-{
-    MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::NGON);
-    Canvas::get()->insert(pM);
-    glWidget->updateGL();
-}
-
-void MainWindow::newGrid()
-{
-    MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::SQUARE);
-    Canvas::get()->insert(pM);
-    glWidget->updateGL();
-}
-
-void MainWindow::newSpine()
-{
-    //MeshShape* pM = MeshShape::newMeshShape(Point(0,0),MeshShape::SPINE);
-    //Canvas::get()->insert(pM);
-}
-
 void MainWindow::toggleLockShape(){
     Shape_p shape = Canvas::get()->active();
     if (!shape)
@@ -461,4 +394,7 @@ void MainWindow::sendShapeFront(){
     glWidget->updateGL();
 }
 
-
+void MainWindow::deleteShape(){
+    Canvas::get()->removeActive();
+    glWidget->updateGL();
+}

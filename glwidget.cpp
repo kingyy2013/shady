@@ -44,7 +44,7 @@
 #include <QTimer>
 #include <gl/glu.h>
 #include <math.h>
-#include "Canvas.h"
+#include "canvas.h"
 
 GLWidget::GLWidget(QWidget *parent)
     : QGLWidget(parent)
@@ -230,7 +230,6 @@ int GLWidget::selectGL(int x, int y){
     orthoView();
 
     glMatrixMode(GL_MODELVIEW);
-    //glutSwapBuffers();
     renderCanvas();
 
     glMatrixMode(GL_PROJECTION);

@@ -1,12 +1,13 @@
 #include <qgl.h>
 #include "Canvas.h"
 #include "SampleShape.h"
-#include "spineshape.h"
-#include "meshshape.h"
-#include "ControlPoint.h"
+#include "meshshape/spineshape.h"
+#include "meshshape/meshshape.h"
+#include "meshshape/Patch.h"
+#include "controlpoint.h"
 #include "curve.h"
-#include "Patch.h"
 
+//these inits need to be moved somewhere else
 Canvas* Canvas::_canvas = new Canvas();
 int Selectable::_COUNT = 0;
 Selectable_p Selectable::_theSelected = 0;
@@ -15,7 +16,6 @@ SelectableMap Selectable::_selectables;
 SelectionSet Selectable::_selection;
 bool Selectable::isSelect;
 ControlPoint_p ControlPoint::_pTheActive = 0;
-
 Canvas::EditMode_e Canvas::MODE = Canvas::POINT_NORMAL_SHAPE_M;
 
 //selection stuff
@@ -36,7 +36,15 @@ void Selectable::renderNamed(bool ispush) const{
 
 Selectable_p select(GLint hits, GLuint *buff){
    //only one selectable object in the stack for now
-   Selectable_p pSel = Selectable::get(buff[3]);
+   unsigned int name = buff[3];
+   Selectable_p pSel =0;
+
+   if ( name & ( 1 << UI_BIT ) ){
+      pSel = ShapeControl::get();
+      ShapeControl::get()->startSelect(name);
+   }else
+      pSel = Selectable::get(buff[3]);
+
    return pSel;
 }
 
@@ -100,31 +108,9 @@ void SampleShape::render() const{
 
     glColor3f(1.0, 0, 0);
     glBegin(GL_POLYGON);
-    for(int i = 0; i < 4; i++)
-        glVertex3f(_p[i].x, _p[i].y, 0);
+    /*for(int i = 0; i < 4; i++)
+        glVertex3f(p[i].x, _p[i].y, 0);*/
     glEnd();
-}
-
-void UIController::render() const {
-
-    if (!Canvas::get()->isDragMode)
-        return;
-
-    glColor3f(1.0, 1.0, 1.0);
-
-    if (Canvas::MODE == Canvas::NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M )
-        FOR_ALL_CONST_ITEMS(CNList, _controlNs)
-        {
-            (*it)->renderNamed();
-        }
-
-    if (Canvas::MODE == Canvas::POINT_M || Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M )
-        FOR_ALL_CONST_ITEMS(CPList, _controlPs)
-        {
-            (*it)->renderNamed();
-        }
-
-    //glEnd();
 }
 
 void ControlPoint::render() const {
@@ -133,9 +119,6 @@ void ControlPoint::render() const {
 
     glColor3f(1.0, 1.0, 1.0);
     selectionColor((Selectable_p)this);
-
-    if (isMarked)
-         glColor3f(0, 1.0, 0);
 
     glPointSize(5.0);
     glBegin(GL_POINTS);
@@ -153,27 +136,54 @@ void ControlPoint::render() const {
     }
 }
 
+void Shape::renderAll() const
+{
+    if(Canvas::get()->isDragMode)
+        ShapeControl::get()->renderControls((Shape_p)this);
 
-void ControlNormal::render() const {
+    renderNamed(true);
+}
 
-    if (!Canvas::get()->isNormalsOn || !isActive() )
-        return;
+void ShapeControl::renderControls(Shape_p shape) const{
 
-    //if ( (Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M) && !isActive() ) return;
+    //could not get pushname popname working!
+    glPointSize(4.0);
+    SVList verts = shape->getVertices();
+    FOR_ALL_CONST_ITEMS(SVList, verts){
+        ShapeVertex_p sv = (*it);
+        if (sv->parent() && (!_theSelected || (_theSelected != sv->parent() && _theSelected->parent() != sv->parent())) )
+            continue;
 
-    glColor3f(1.0, 0, 0);
-    glPointSize(7.0);
-    glBegin(GL_POINTS);
-    glVertex3f(P().x, P().y, 0);
-    glEnd();
+        unsigned int svname = sv->id() | (1 << UI_BIT);
+        if (Canvas::get()->isNormalsOn && sv->isNormalControl){
+            unsigned int svn_name = svname | (1 << NORMAL_CONTROL_BIT);
+            Point p1 = sv->P + Point(sv->N*NORMAL_RAD);
+            glLoadName(svn_name);
+            glBegin(GL_POINTS);
+            glColor3f(1.0, 0, 0);
+            glVertex3f(p1.x, p1.y, 0);
+            glEnd();
+            if (isInRenderMode()){
+                glColor3f(1.0, 1.0, 1.0);
+                glBegin(GL_LINES);
+                glVertex3f(sv->P.x, sv->P.y, 0);
+                glVertex3f(p1.x, p1.y, 0);
+                glEnd();
+            }
+        }
 
-    if (isChild() && isInRenderMode()){
-        glBegin(GL_LINES);
-        Point p0 = P();
-        Point p1 = parent()->P();
-        glVertex3f(p0.x, p0.y, 0);
-        glVertex3f(p1.x, p1.y, 0);
+        glLoadName(svname);
+        glBegin(GL_POINTS);
+        glColor3f(1.0, 1.0, 1.0);
+        glVertex3f(sv->P.x, sv->P.y, 0);
         glEnd();
+
+        if (isInRenderMode() && sv->parent()){
+            glBegin(GL_LINES);
+            glVertex3f(sv->P.x, sv->P.y, 0);
+            glVertex3f(sv->parent()->P.x, sv->parent()->P.y, 0);
+            glEnd();
+        }
     }
 }
 
@@ -215,8 +225,8 @@ void MeshShape::render() const {
 
 void MeshShape::render(Edge_p pEdge) const{
 
-    if (pEdge->curve){
-        pEdge->curve->renderNamed();
+    if (pEdge->pData->pCurve){
+        pEdge->pData->pCurve->renderNamed();
         return;
     }
     //non selectable line representation
@@ -232,12 +242,12 @@ void MeshShape::render(Edge_p pEdge) const{
 }
 
 void MeshShape::render(Face_p pFace) const{
-    if (pFace->surface){
+    if (pFace->pData->pSurface){
         //this is messy, needs better solution
         if (Canvas::get()->canDragShape()){
-            pFace->surface->renderUnnamed();
+            pFace->pData->pSurface->renderUnnamed();
         }else{
-            pFace->surface->renderNamed();
+            pFace->pData->pSurface->renderNamed();
         }
         return;
     }

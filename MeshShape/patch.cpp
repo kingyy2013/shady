@@ -1,5 +1,5 @@
 #include "Patch.h"
-#include "curve.h"
+#include "../curve.h"
 
 int     Patch::N;
 int     Patch::Ni;
@@ -11,7 +11,8 @@ Patch::Patch(Face_p pF):Selectable(Renderable::SHAPE){
     _ps = 0;
     _ns = 0;
     _pFace = pF;
-    _pFace->surface = this;
+    _pFace->pData = new FaceData();
+    _pFace->pData->pSurface = this;
     this->pRef = (void*)pF;
 }
 
@@ -148,11 +149,11 @@ Vec3 Patch::compose(const Vec3& v, const Vec3& nx){
 
 Point Patch::K(int ei, int i){
     Corner* ci = C(ei);
-    Spline* c = ci->E()->curve;
+    Spline* c = ci->E()->pData->pCurve;
     /*if (!c)
         return (i<2)?(ci->P()*(1-i) + ci->next()->P()*i) : (ci->P()*(i-2) + ci->next()->P()*(1-t));*/
 
-    bool curvedir = (ci->V()->pP == c->pCV(0));
+    bool curvedir = (ci->V()->pData->pP() == c->pCV(0));
     bool rev = ((ei>1) && curvedir) || ( (ei<2) && !curvedir);
     return (rev)?c->CV(3-i):c->CV(i);
 }
@@ -162,7 +163,7 @@ Normal Patch::computeN(Corner_p c){
     Point p1 = c->E()->curve->CV(c->isC0()?1:2);					//next
     Point p0 = c->prev()->E()->curve->CV(c->prev()->isC0()?2:1);   //prev
     Point p2 = p0 + (p1-p);*/
-    return *c->V()->pN;
+    return c->V()->pData->N;
 }
 
 /*

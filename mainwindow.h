@@ -90,6 +90,7 @@ private slots:
     void moveShapeToFront();
     void sendShapeBack();
     void sendShapeFront();
+    void deleteShape();
 
 private:
 
@@ -151,6 +152,7 @@ private:
     QAction * shapeSendBackAct;
     QAction * shapeParentAct;
     QAction * shapeTransformAct;
+    QAction * shapeDeleteAct;
 
 };
 

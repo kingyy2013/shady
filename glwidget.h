@@ -42,7 +42,7 @@
 #define GLWIDGET_H
 
 #include <QGLWidget>
-#include "Base.h"
+#include "base.h"
 
 #define NEAR_P 1.0
 #define FAR_P 1000.0
