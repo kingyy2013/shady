@@ -1,53 +1,78 @@
-INCLUDEPATH += -I D:\opencv246\build\include \
--I D:\youyou_program\ASM\stasm4.0.0\stasm \
--I D:\glm
+CONFIG +=
 
-LIBS += -LD:\opencv246\mingw\bin \
--lopencv_core246 \
--lopencv_highgui246 \
--lopencv_imgproc246 \
--lopencv_objdetect246 \
--LD:\youyou_program\ASM\stasm4.0.0\build\mingw48_32\bin \
--lstasm_lib_proj
 
-HEADERS       = glwidget.h \
-                mainwindow.h \
+
+HEADERS += glwidget.h \
+    mainwindow.h \
     vec/Vector.h \
     vec/Utility.h \
     vec/Quaternion.h \
     vec/Matrix.h \
-    Base.h \
-    Shape.h \
-    Canvas.h \
-    SampleShape.h \
-    ControlPoint.h \
-    meshshape.h \
-    spineshape.h \
-    CMesh.h \
+    base.h \
+    canvas.h \
+    sampleshape.h \
+    controlpoint.h \
     curve.h \
-    Patch.h \
+    customdialog.h \
+    shape.h \
+    FacialShape/facialshape.h \
     FacialShape/symmetryquad.h \
     FacialShape/featurequads.h \
-    FacialShape/facialshape.h \
-    customdialog.h
+    meshshape/patch.h \
+    meshshape/spineshape.h \
+    meshshape/meshshape.h \
+    meshshape/meshdata.h \
+    meshshape/cMesh.h
 
-SOURCES       = glwidget.cpp \
-                main.cpp \
-                mainwindow.cpp \
+SOURCES += glwidget.cpp \
+    main.cpp \
+    mainwindow.cpp \
     vec/Vector.cpp \
     vec/Utility.cpp \
     vec/Quaternion.cpp \
     vec/Matrix.cpp \
-    Render.cpp \
-    meshshape.cpp \
-    spine.cpp \
-    CMesh.cpp \
+    render.cpp \
     curve.cpp \
-    beziershape.cpp \
-    Patch.cpp \
+    customdialog.cpp \
+    shape.cpp \
+    FacialShape/facialshape.cpp \
     FacialShape/symmetryquad.cpp \
     FacialShape/featurequads.cpp \
-    FacialShape/facialshape.cpp \
-    customdialog.cpp
+    meshshape/patch.cpp \
+    meshshape/spine.cpp \
+    meshshape/meshshape.cpp \
+    meshshape/cmesh.cpp \
+    meshshape/beziershape.cpp \
+    meshshape/meshoperations.cpp \
+    meshshape/meshprimitives.cpp \
+    uicalbacks_meshshape.cpp
 
 QT           += opengl widgets
+
+
+
+FACIAL_SHAPE{
+    DEFINES += FACIAL_SHAPE
+    OPENCV_HOME=D:\opencv246
+    OPENCV_V = 246
+    STASM_HOME = D:\youyou_program\ASM\stasm4.0.0
+    STASM_LIB = stasm_lib_proj
+
+    INCLUDEPATH += -I $${OPENCV_HOME}\build\include \
+    -I $${STASM_HOME}\stasm
+
+    LIBS += -L$${OPENCV_HOME}\mingw\bin \
+    -lopencv_core$${OPENCV_V} \
+    -lopencv_highgui$${OPENCV_V} \
+    -lopencv_imgproc$${OPENCV_V} \
+    -lopencv_objdetect$${OPENCV_V} \
+    -L$${STASM_HOME}\build\mingw48_32\bin \
+    -l$${STASM_LIB}
+}else{
+    HEADERS -=    FacialShape/facialshape.h \
+    FacialShape/symmetryquad.h \
+    FacialShape/featurequads.h
+    SOURCES -=     FacialShape/facialshape.cpp \
+    FacialShape/symmetryquad.cpp \
+    FacialShape/featurequads.cpp
+}

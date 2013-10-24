@@ -1,22 +1,22 @@
 #ifndef SAMPLESHAPE_H
 #define SAMPLESHAPE_H
 
-#include "Shape.h"
+#include "shape.h"
 
 class SampleShape: public Shape{
 
-    Point _p[4];
 
 public:
 
     SampleShape():Shape(){
-        _p[0].set(-0.1, 0.1);
-        _p[1].set(0.1, 0.1);
-        _p[2].set(0.1, -0.1);
-        _p[3].set(-0.1, -0.1);
+        Point p[4];
+        p[0].set(-0.1, 0.1);
+        p[1].set(0.1, 0.1);
+        p[2].set(0.1, -0.1);
+        p[3].set(-0.1, -0.1);
 
         for(int i=0; i<4; i++)
-            getController()->addControl(&_p[i]);
+            addVertex(p[i]);
     }
 
     void render() const;

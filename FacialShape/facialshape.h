@@ -1,9 +1,9 @@
 #ifndef FACIALSHAPE_H
 #define FACIALSHAPE_H
 
-
 #include "symmetryquad.h"
-#include "meshshape.h"
+
+#include "meshshape/meshshape.h"
 
 class FacialShape : public MeshShape
 {

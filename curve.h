@@ -6,7 +6,6 @@
 
 typedef std::vector<Point_p> Point_pVec;
 
-#define EPS 0.01
 
 class Curve: public Selectable {
 

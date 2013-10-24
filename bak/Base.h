@@ -1,4 +1,4 @@
-#ifndef __AUXILIARY_H__
+#ifndef __AUXILIARY_H__	
 #define __AUXILIARY_H__
 #include <vector>
 #include <map>
@@ -10,9 +10,7 @@
 #define TYPE_BIT 24
 
 #define FOR_ALL_ITEMS(ItemList, items) for(ItemList::iterator it = items.begin(); it != items.end(); it++)
-#define FOR_ALL_ITEMS_2(ItemList, items) for(ItemList::iterator it2 = items.begin(); it2 != items.end(); it2++)
 #define FOR_ALL_CONST_ITEMS(ItemList, items) for(ItemList::const_iterator it = items.begin(); it != items.end(); it++)
-#define FOR_ALL_CONST_ITEMS_2(ItemList, items) for(ItemList::const_iterator it2 = items.begin(); it2 != items.end(); it2++)
 #define FOR_ALL_I(size) for(int i =0; i < size; i++ )
 #define CLAMP(n, min, max) ( (n) < (min) ? (min) : ( ( (n) > (max) ) ? (max) : (n) ) )
 
@@ -25,7 +23,6 @@ typedef Renderable* Renderable_p;
 typedef Selectable* Selectable_p;
 typedef Draggable* Draggable_p;
 typedef std::map<int, Selectable_p> SelectableMap;
-typedef std::map<int, Selectable_p>* SelectableMap_p;
 typedef std::list<Draggable_p> DraggableList;
 typedef std::set<Selectable_p> SelectionSet;
 
@@ -37,8 +34,6 @@ typedef Vec3*   Normal_p;
 
 typedef std::list<Point> PointList;
 typedef std::list<Point_p> Point_pList;
-
-#define UI_BIT 31
 
 class Renderable{
 
@@ -55,7 +50,7 @@ public:
     Type_e type() const {return _type;}
 
     void renderUpToDate(){
-        ensureUpToDate();
+        update();
         render();
     }
 
@@ -64,17 +59,13 @@ public:
         onOutdate();
     }
 
-    void ensureUpToDate(){
-        if (!_upToDate)
-            update();
-    }
-
     void update(){
+        //if (_upToDate) return;
         onUpdate();
         _upToDate = true;
     }
 
-    Void_p pRef; //generic pointer to refering object
+    Void_p pRef; //genereic pointer to refering object
 
 private:
     Type_e _type;
@@ -97,17 +88,14 @@ public:
     enum Click_e{UP, DOWN, R_UP, R_DOWN};
 
     Selectable(Type_e type):Renderable(type){
-        _name = _COUNT;
-        //_name = (type << TYPE_BIT) | _COUNT;
-        if(_selectables==NULL)
-            _selectables = new SelectableMap();
-        (*_selectables)[_name] = this;
+        _name = (type << TYPE_BIT) | _COUNT;
+        _selectables[_name] = this;
         _isDraggable = false;
         _COUNT++;
     }
 
     virtual ~Selectable(){
-        (*_selectables).erase(_name);
+        _selectables.erase(_name);
     }
 
     void renderNamed(bool ispush = false) const;
@@ -115,43 +103,34 @@ public:
         render();
     }
 
+    int name() const{return _name;}
+    inline bool isTheSelected() const {return this == _theSelected;}
+    inline bool isInSelection()  {const Selectable_p sel = this; return this == _theSelected || _selection.find(sel) != _selection.cend();}
     inline bool isDraggable() const{return _isDraggable;}
     inline void makeDraggable(){_isDraggable = true;}
 
-    int name() const{return _name;}
-    inline bool isTheSelected() const {return this == _theSelected;}
-    inline bool isInSelection() const {return _selection.find((Selectable_p)this) != _selection.end();}
-
-
     //statics
     static Selectable_p get(int iname){
-        SelectableMap::const_iterator it =(*_selectables).find(iname);
-        if (it == (*_selectables).end())
+        SelectableMap::const_iterator it =_selectables.find(iname);
+        if (it == _selectables.end())
             return 0;
         return it->second;
     }
 
     static Selectable_p getTheSelected(){return _theSelected;}
     static Selectable_p getLastSelected(){return _lastSelected;}
-    static SelectionSet getSelection(){return _selection;}
-    static int selectionSize(){return _selection.size();}
 
-    static void startSelect(Selectable_p pObj, bool isselect, bool isMultiSelect)
+    static void startSelect(Selectable_p pObj, bool isMultiSelect = false)
     {
-        isSelect = isselect;
         _theSelected = pObj;
-
-        if (pObj)
-            pObj->onDown();
+        if (_theSelected)
+            _theSelected->onDown();
         else
             return;
 
-        if (isMultiSelect){
-            if (isSelect)
-                _selection.insert(pObj);
-            else
-                _selection.erase(pObj);
-        }else
+        if (isMultiSelect)
+            _selection.insert(pObj);
+        else
             _selection.clear();
     }
 
@@ -164,18 +143,17 @@ public:
     }
 
     static void reset(){
-        (*_selectables).clear();
+        _selectables.clear();
         _COUNT = 0;
     }
 
-    static bool isSelect;
 
 private:
 
-    static int          _COUNT;
+    static int _COUNT;
     static Selectable_p _theSelected;
     static Selectable_p _lastSelected;
-    static SelectableMap_p _selectables;
+    static SelectableMap _selectables;
     static SelectionSet  _selection;
 
 };
@@ -268,7 +246,5 @@ namespace dlfl {
     typedef Mesh*       Mesh_p;
 
 }
-
-struct ShapeVertex;
 
 #endif

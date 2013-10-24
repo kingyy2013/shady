@@ -44,7 +44,7 @@
 #include <QTimer>
 #include <gl/glu.h>
 #include <math.h>
-#include "Canvas.h"
+#include "canvas.h"
 
 GLWidget::GLWidget(QWidget *parent)
     : QGLWidget(parent)
@@ -145,7 +145,7 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
         if (Canvas::get()->canDragShape() && pSel->type() == Renderable::SHAPE){
             Canvas::get()->activate((Shape_p)pSel);
         }
-        Selectable::startSelect(pSel);
+        Selectable::startSelect(pSel, event->button() == Qt::LeftButton, event->modifiers() & Qt::ControlModifier);
     }
 
     //send the click to the active shape
@@ -230,7 +230,6 @@ int GLWidget::selectGL(int x, int y){
     orthoView();
 
     glMatrixMode(GL_MODELVIEW);
-    //glutSwapBuffers();
     renderCanvas();
 
     glMatrixMode(GL_PROJECTION);

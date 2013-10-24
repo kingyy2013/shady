@@ -1,4 +1,5 @@
 #include "curve.h"
+#define EPS 0.01
 
 Curve::Curve(int sz):Selectable(Renderable::SHAPE){
     _isFlipped = _isClosed = false;

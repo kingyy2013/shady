@@ -39,13 +39,15 @@
 ****************************************************************************/
 #include "glwidget.h"
 #include "mainwindow.h"
-#include "SampleShape.h"
-#include "spineshape.h"
-#include "meshshape.h"
-#include "Canvas.h"
-#include "Patch.h"
-#include "FacialShape/facialshape.h"
+
 #include "customdialog.h"
+
+#include "sampleshape.h"
+#include "canvas.h"
+#include "meshshape/Patch.h"
+#include "meshshape/spineshape.h"
+#include "meshshape/meshshape.h"
+
 #include <QtWidgets>
 
 MainWindow::MainWindow()
@@ -82,13 +84,12 @@ void MainWindow::initTools()
 
     QToolBar *toolbar = addToolBar("main toolbar");
 
+    toolbar->addAction(dragAct);
+    toolbar->addSeparator();
+
     toolbar->addAction(shapeInsertGridAct);
     toolbar->addAction(shapeInsert2NGonAct);
     toolbar->addAction(shapeInsertSpineAct);
-
-    toolbar->addSeparator();
-
-    toolbar->addAction(dragAct);
 
     toolbar->addSeparator();
 
@@ -218,6 +219,10 @@ void MainWindow::createActions()
     shapeSendBackAct->setShortcut(tr("Ctrl+B"));
     connect(shapeSendBackAct, SIGNAL(triggered()), this, SLOT(sendShapeBack()));
 
+    shapeDeleteAct = new QAction(tr("Delete"), this);
+    shapeDeleteAct->setShortcut(Qt::Key_Delete);
+    connect(shapeDeleteAct, SIGNAL(triggered()), this, SLOT(deleteShape()));
+
 }
 
 void MainWindow::createMenus()
@@ -245,6 +250,7 @@ void MainWindow::createMenus()
 
     insertMenu =  shapeMenu->addMenu("Insert");
     shapeMenu->addAction(shapeLockAct);
+    shapeMenu->addAction(shapeDeleteAct);
 
     QMenu* arrangeMenu = shapeMenu->addMenu("Arrange");
     arrangeMenu->addAction(shapeMoveFrontAct);
@@ -322,66 +328,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
 
     int key = event->key();
 
-    if (key > 48 && key < 57 )
+    /*if (key > 48 && key < 57 )
     {
         Canvas::MODE = (Canvas::EditMode_e)(key - 49);
-    }
-
-    switch(key){
-
-        case Qt::Key_Delete :
-             Canvas::get()->removeActive();
-        break;
-
-        case Qt::Key_N:
-            {
-                MeshShape* ms = new MeshShape();
-                Canvas::get()->insert(ms);
-                Canvas::get()->activate(ms);
-            }
-        break;
-
-       case Qt::Key_PageUp:
-            Canvas::get()->activeUp();
-       break;
-
-        case Qt::Key_PageDown:
-             Canvas::get()->activeDown();
-        break;
-
-    }
+    }*/
     glWidget->updateGL();
 }
 
 void MainWindow::newFile(){
     Canvas::get()->clear();
     glWidget->updateGL();
-}
-
-
-void MainWindow::selectExtrudeEdge()
-{
-    MeshShape::setOPMODE(MeshShape::EXTRUDE_EDGE);
-    unselectDrag();
-}
-
-void MainWindow::selectExtrudeFace()
-{
-    MeshShape::setOPMODE(MeshShape::EXTRUDE_FACE);
-    unselectDrag();
-}
-
-void MainWindow::selectDeleteFace()
-{
-    MeshShape::setOPMODE(MeshShape::DELETE_FACE);
-    unselectDrag();
-}
-
-void MainWindow::selectInsertSegment()
-{
-    createCustomDialog("Insert Segment", "input1","input2","input3");
-    MeshShape::setOPMODE(MeshShape::INSERT_SEGMENT);
-    unselectDrag();
 }
 
 void MainWindow::flipDrag()
@@ -420,35 +376,6 @@ void MainWindow::toggleShadow(){
     glWidget->updateGL();
 }
 
-
-//Shape Menu Call backs
-
-void MainWindow::new2NGon()
-{
-    createCustomDialog("Create NGon", "input1","input2","input3");
-    MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::NGON);
-    Canvas::get()->insert(pM);
-    glWidget->updateGL();
-}
-
-void MainWindow::newGrid()
-{
-    createCustomDialog("Create New Grid", "input1","input2","input3");
-    MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::SQUARE);
-    Canvas::get()->insert(pM);
-    glWidget->updateGL();
-}
-
-void MainWindow::newSpine()
-{
-    createCustomDialog("Create New Grid", "input1","input2","input3");
-    //MeshShape* pM = MeshShape::newMeshShape(Point(0,0),MeshShape::SPINE);
-    //Canvas::get()->insert(pM);
-
-    MeshShape* pM = new FacialShape();
-    Canvas::get()->insert(pM);
-    glWidget->updateGL();
-}
 
 void MainWindow::toggleLockShape(){
     Shape_p shape = Canvas::get()->active();
@@ -522,4 +449,7 @@ void MainWindow::createCustomDialog(QString title, QString input1,QString input2
 //     cout << "Thanks " << name << end;   // and here it's up to you to do stuff with your new values!
 }
 
-
+void MainWindow::deleteShape(){
+    Canvas::get()->removeActive();
+    glWidget->updateGL();
+}

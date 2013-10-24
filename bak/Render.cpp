@@ -1,30 +1,21 @@
 #include <qgl.h>
 #include "Canvas.h"
 #include "SampleShape.h"
-
-
-#include "meshshape/spineshape.h"
-#include "meshshape/meshshape.h"
-
-#ifdef FACIAL_SHAPE
-#include "FacialShape/facialshape.h"
-#endif
-
-#include "meshshape/Patch.h"
-#include "controlpoint.h"
+#include "spineshape.h"
+#include "meshshape.h"
+#include "ControlPoint.h"
 #include "curve.h"
+#include "Patch.h"
 
-//these inits need to be moved somewhere else
 Canvas* Canvas::_canvas = new Canvas();
 int Selectable::_COUNT = 0;
 Selectable_p Selectable::_theSelected = 0;
 Selectable_p Selectable::_lastSelected = 0;
-SelectableMap_p Selectable::_selectables;
-SelectionSet Selectable::_selection;
-bool Selectable::isSelect;
+SelectableMap Selectable::_selectables;
 ControlPoint_p ControlPoint::_pTheActive = 0;
+
 Canvas::EditMode_e Canvas::MODE = Canvas::POINT_NORMAL_SHAPE_M;
-GLuint texture[1];
+
 //selection stuff
 bool isInRenderMode(){
     GLint mode;
@@ -43,42 +34,18 @@ void Selectable::renderNamed(bool ispush) const{
 
 Selectable_p select(GLint hits, GLuint *buff){
    //only one selectable object in the stack for now
-   unsigned int name = buff[3];
-   Selectable_p pSel =0;
-
-   if ( name & ( 1 << UI_BIT ) ){
-      pSel = ShapeControl::get();
-      ShapeControl::get()->startSelect(name);
-   }else
-      pSel = Selectable::get(buff[3]);
-
+   Selectable_p pSel = Selectable::get(buff[3]);
    return pSel;
 }
 
 inline bool selectionColor(Selectable_p pSel){
-    if (pSel->isTheSelected()){
+    if (pSel->isTheSelected())
         glColor3f(1.0, 0.1, 0);
-        return true;
-    }
     else if (pSel->isInSelection())
-    {
         glColor3f(1.0, 1.0, 0);
-        return true;
-    }
-    return false;
 }
 
 // now all renders here
-void Canvas::setImagePlane(const string &filename){
-    QImage img_data = QGLWidget::convertToGLFormat(QImage(QString::fromStdString(filename)));
-    glGenTextures(1, texture);
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
-                  img_data.width(), img_data.height(),
-                  0, GL_RGBA, GL_UNSIGNED_BYTE, img_data.bits() );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-}
 
 void Canvas::render() const{
 
@@ -90,27 +57,6 @@ void Canvas::render() const{
         Shape_p s = *it;
         if (!s->isChild())
             render(*it);
-    }
-
-    if(texture[0])
-    {
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-        glColor4f(1.0, 1.0, 1.0, 1.0);
-        glTexCoord2d(0.0,0.0);
-        glVertex3f(-1.0,-1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(0.0,1.0);
-        glVertex3f(-1.0,1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(1.0,1.0);
-        glVertex3f(1.0,1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(1.0,0.0);
-        glVertex3f(1.0,-1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
     }
 }
 
@@ -146,9 +92,31 @@ void SampleShape::render() const{
 
     glColor3f(1.0, 0, 0);
     glBegin(GL_POLYGON);
-    /*for(int i = 0; i < 4; i++)
-        glVertex3f(p[i].x, _p[i].y, 0);*/
+    for(int i = 0; i < 4; i++)
+        glVertex3f(_p[i].x, _p[i].y, 0);
     glEnd();
+}
+
+void UIController::render() const {
+
+    if (!Canvas::get()->isDragMode)
+        return;
+
+    glColor3f(1.0, 1.0, 1.0);
+
+    if (Canvas::MODE == Canvas::NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M )
+        FOR_ALL_CONST_ITEMS(CNList, _controlNs)
+        {
+            (*it)->renderNamed();
+        }
+
+    if (Canvas::MODE == Canvas::POINT_M || Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M )
+        FOR_ALL_CONST_ITEMS(CPList, _controlPs)
+        {
+            (*it)->renderNamed();
+        }
+
+    //glEnd();
 }
 
 void ControlPoint::render() const {
@@ -156,7 +124,10 @@ void ControlPoint::render() const {
     if (isChild() && !isActive()) return;
 
     glColor3f(1.0, 1.0, 1.0);
-    selectionColor((Selectable_p)this);
+    selectionColor(this);
+
+    if (isMarked)
+         glColor3f(0, 1.0, 0);
 
     glPointSize(5.0);
     glBegin(GL_POINTS);
@@ -174,54 +145,27 @@ void ControlPoint::render() const {
     }
 }
 
-void Shape::renderAll() const
-{
-    if(Canvas::get()->isDragMode)
-        ShapeControl::get()->renderControls((Shape_p)this);
 
-    renderNamed(true);
-}
+void ControlNormal::render() const {
 
-void ShapeControl::renderControls(Shape_p shape) const{
+    if (!Canvas::get()->isNormalsOn || !isActive() )
+        return;
 
-    //could not get pushname popname working!
-    glPointSize(4.0);
-    SVList verts = shape->getVertices();
-    FOR_ALL_CONST_ITEMS(SVList, verts){
-        ShapeVertex_p sv = (*it);
-        if (sv->parent() && (!_theSelected || (_theSelected != sv->parent() && _theSelected->parent() != sv->parent())) )
-            continue;
+    //if ( (Canvas::MODE == Canvas::POINT_NORMAL_M || Canvas::MODE == Canvas::POINT_NORMAL_SHAPE_M) && !isActive() ) return;
 
-        unsigned int svname = sv->id() | (1 << UI_BIT);
-        if (Canvas::get()->isNormalsOn && sv->isNormalControl){
-            unsigned int svn_name = svname | (1 << NORMAL_CONTROL_BIT);
-            Point p1 = sv->P + Point(sv->N*NORMAL_RAD);
-            glLoadName(svn_name);
-            glBegin(GL_POINTS);
-            glColor3f(1.0, 0, 0);
-            glVertex3f(p1.x, p1.y, 0);
-            glEnd();
-            if (isInRenderMode()){
-                glColor3f(1.0, 1.0, 1.0);
-                glBegin(GL_LINES);
-                glVertex3f(sv->P.x, sv->P.y, 0);
-                glVertex3f(p1.x, p1.y, 0);
-                glEnd();
-            }
-        }
+    glColor3f(1.0, 0, 0);
+    glPointSize(7.0);
+    glBegin(GL_POINTS);
+    glVertex3f(P().x, P().y, 0);
+    glEnd();
 
-        glLoadName(svname);
-        glBegin(GL_POINTS);
-        glColor3f(1.0, 1.0, 1.0);
-        glVertex3f(sv->P.x, sv->P.y, 0);
+    if (isChild() && isInRenderMode()){
+        glBegin(GL_LINES);
+        Point p0 = P();
+        Point p1 = parent()->P();
+        glVertex3f(p0.x, p0.y, 0);
+        glVertex3f(p1.x, p1.y, 0);
         glEnd();
-
-        if (isInRenderMode() && sv->parent()){
-            glBegin(GL_LINES);
-            glVertex3f(sv->P.x, sv->P.y, 0);
-            glVertex3f(sv->parent()->P.x, sv->parent()->P.y, 0);
-            glEnd();
-        }
     }
 }
 
@@ -263,8 +207,8 @@ void MeshShape::render() const {
 
 void MeshShape::render(Edge_p pEdge) const{
 
-    if (pEdge->pData->pCurve){
-        pEdge->pData->pCurve->renderNamed();
+    if (pEdge->curve){
+        pEdge->curve->renderNamed();
         return;
     }
     //non selectable line representation
@@ -280,57 +224,21 @@ void MeshShape::render(Edge_p pEdge) const{
 }
 
 void MeshShape::render(Face_p pFace) const{
-    if (pFace->pData->pSurface){
+    if (pFace->surface){
         //this is messy, needs better solution
         if (Canvas::get()->canDragShape()){
-            pFace->pData->pSurface->renderUnnamed();
+            pFace->surface->renderUnnamed();
         }else{
-            pFace->pData->pSurface->renderNamed();
+            pFace->surface->renderNamed();
         }
         return;
     }
 }
 
-#ifdef FACIAL_SHAPE
-void FacialShape::initBG(){
-    QImage img_data = QGLWidget::convertToGLFormat(QImage(QString::fromStdString(m_imgName)));
-    glGenTextures(1, texture);
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
-                  img_data.width(), img_data.height(),
-                  0, GL_RGBA, GL_UNSIGNED_BYTE, img_data.bits() );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-}
-void FacialShape::render() const{
-    MeshShape::render();
-    if(texture[0])
-    {
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-        glColor4f(1.0, 1.0, 1.0, 1.0);
-        glTexCoord2d(0.0,0.0);
-        glVertex3f(-1.0,-1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(0.0,1.0);
-        glVertex3f(-1.0,1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(1.0,1.0);
-        glVertex3f(1.0,1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glTexCoord2d(1.0,0.0);
-        glVertex3f(1.0,-1.0,0);
-        glNormal3f(0.0,0.0,1.0);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-    }
-}
-#endif
-
 void Curve::render() const {
 
     glColor3f(1.0, 1.0, 1.0);
-    selectionColor((Selectable_p)this);
+    selectionColor(this);
     if (isTheSelected())
         glColor3f(1.0, 0, 0);
 
@@ -362,7 +270,7 @@ void Patch4::render() const{
 
             if (isInSelection())
             {
-                selectionColor((Selectable_p)this);
+                selectionColor(this);
                 glBegin(GL_POLYGON);
                 for(int k=0; k<4; k++){
                     glVertex3f(p[k].x, p[k].y, 0);

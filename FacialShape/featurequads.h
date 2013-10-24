@@ -2,13 +2,12 @@
 #define FEATUREQUADS_H
 
 
-
 #include "opencv/highgui.h" // needed for imread
-
 #include "opencv2/imgproc/imgproc.hpp" // needed for imread
 #include "stasm_lib.h"
 #include "stasm_lib_ext.h"  // needed for stasm_search_auto_ext
 #include "stasm_landmarks.h"
+
 
 class FeatureQuads
 {
