@@ -141,7 +141,7 @@ void Mesh::buildEdges(){
     Edge_p* ematrix = new Edge_p[es];
 	for(int i=0; i < es; i++)
 		ematrix[i] = 0x00;
-    for(std::list<Face_p>::const_iterator it = _faces.cbegin(); it != _faces.cend(); it++){
+    for(std::list<Face_p>::const_iterator it = _faces.begin(); it != _faces.end(); it++){
         Face_p f = *it;
 		for(int i = 0; i < f->size(); i++ ){
 			int eid = f->V(i)->edgeUId(f->V(i+1));

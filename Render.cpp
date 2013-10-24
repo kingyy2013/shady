@@ -3,6 +3,7 @@
 #include "SampleShape.h"
 #include "spineshape.h"
 #include "meshshape.h"
+#include "FacialShape/facialshape.h"
 #include "ControlPoint.h"
 #include "curve.h"
 #include "Patch.h"
@@ -15,7 +16,7 @@ SelectableMap Selectable::_selectables;
 ControlPoint_p ControlPoint::_pTheActive = 0;
 
 Canvas::EditMode_e Canvas::MODE = Canvas::POINT_NORMAL_SHAPE_M;
-
+GLuint texture[1];
 //selection stuff
 bool isInRenderMode(){
     GLint mode;
@@ -39,6 +40,16 @@ Selectable_p select(GLint hits, GLuint *buff){
 }
 
 // now all renders here
+void Canvas::setImagePlane(const string &filename){
+    QImage img_data = QGLWidget::convertToGLFormat(QImage(QString::fromStdString(filename)));
+    glGenTextures(1, texture);
+    glBindTexture(GL_TEXTURE_2D, texture[0]);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
+                  img_data.width(), img_data.height(),
+                  0, GL_RGBA, GL_UNSIGNED_BYTE, img_data.bits() );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+}
 
 void Canvas::render() const{
 
@@ -50,6 +61,27 @@ void Canvas::render() const{
         Shape_p s = *it;
         if (!s->isChild())
             render(*it);
+    }
+
+    if(texture[0])
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBegin(GL_QUADS);
+        glColor4f(1.0, 1.0, 1.0, 1.0);
+        glTexCoord2d(0.0,0.0);
+        glVertex3f(-1.0,-1.0,0);
+        glNormal3f(0.0,0.0,1.0);
+        glTexCoord2d(0.0,1.0);
+        glVertex3f(-1.0,1.0,0);
+        glNormal3f(0.0,0.0,1.0);
+        glTexCoord2d(1.0,1.0);
+        glVertex3f(1.0,1.0,0);
+        glNormal3f(0.0,0.0,1.0);
+        glTexCoord2d(1.0,0.0);
+        glVertex3f(1.0,-1.0,0);
+        glNormal3f(0.0,0.0,1.0);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
     }
 }
 
@@ -229,6 +261,39 @@ void MeshShape::render(Face_p pFace) const{
         }
         return;
     }
+}
+
+void FacialShape::initBG(){
+    QImage img_data = QGLWidget::convertToGLFormat(QImage(QString::fromStdString(m_imgName)));
+    GLuint textureID[1];
+    glGenTextures(1, textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID[0]);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA,
+                  img_data.width(), img_data.height(),
+                  0, GL_RGBA, GL_UNSIGNED_BYTE, img_data.bits() );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+}
+void FacialShape::render() const{
+    MeshShape::render();
+
+//    glEnable(GL_TEXTURE_2D);
+//    glBegin(GL_QUADS);
+//    glColor4f(1.0, 1.0, 1.0, 1.0);
+//    glTexCoord2d(0.0,0.0);
+//    glVertex3f(-1.0,-1.0,0);
+//    glNormal3f(0.0,0.0,1.0);
+//    glTexCoord2d(0.0,1.0);
+//    glVertex3f(-1.0,1.0,0);
+//    glNormal3f(0.0,0.0,1.0);
+//    glTexCoord2d(1.0,1.0);
+//    glVertex3f(1.0,1.0,0);
+//    glNormal3f(0.0,0.0,1.0);
+//    glTexCoord2d(1.0,0.0);
+//    glVertex3f(1.0,-1.0,0);
+//    glNormal3f(0.0,0.0,1.0);
+//    glEnd();
+//    glDisable(GL_TEXTURE_2D);
 }
 
 void Curve::render() const {

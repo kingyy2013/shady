@@ -44,7 +44,8 @@
 #include "meshshape.h"
 #include "Canvas.h"
 #include "Patch.h"
-
+#include "FacialShape/facialshape.h"
+#include "customdialog.h"
 #include <QtWidgets>
 
 MainWindow::MainWindow()
@@ -133,6 +134,16 @@ void MainWindow::createActions()
     shadingOnAct->setShortcut('S');
     shadingOnAct->setCheckable(true);
     connect(shadingOnAct, SIGNAL(triggered()), this, SLOT(toggleShading()));
+
+    ambientOnAct = new QAction(tr("&Ambient On"), this);
+    ambientOnAct->setShortcut('A');
+    ambientOnAct->setCheckable(true);
+    connect(shadingOnAct, SIGNAL(triggered()), this, SLOT(toggleAmbient()));
+
+    shadowOnAct = new QAction(tr("&Shadow On"), this);
+    shadowOnAct->setShortcut('W');
+    shadowOnAct->setCheckable(true);
+    connect(shadingOnAct, SIGNAL(triggered()), this, SLOT(toggleShadow()));
 
     normalsOnAct = new QAction(tr("Show &Normals"), this);
     normalsOnAct->setShortcut('N');
@@ -227,6 +238,8 @@ void MainWindow::createMenus()
     viewMenu->addAction(normalsOnAct);
     viewMenu->addAction(patchesOnAct);
     viewMenu->addAction(shadingOnAct);
+    viewMenu->addAction(ambientOnAct);
+    viewMenu->addAction(shadowOnAct);
 
     shapeMenu  = menuBar()->addMenu(tr("&Shape"));
 
@@ -249,10 +262,20 @@ void MainWindow::createMenus()
     insertMenu->addAction(shapeInsertSpineAct);
 
     toolsMenu  = menuBar()->addMenu(tr("Tools"));
-    toolsMenu->addAction(extrudeEdgeAct);
-    toolsMenu->addAction(extrudeFaceAct);
-    toolsMenu->addAction(insertSegmentAct);
-    toolsMenu->addAction(deleteFaceAct);
+    QMenu * GeoTool = toolsMenu->addMenu("Geometry Tools");
+    GeoTool->addAction(extrudeEdgeAct);
+    GeoTool->addAction(extrudeFaceAct);
+    GeoTool->addAction(insertSegmentAct);
+    GeoTool->addAction(deleteFaceAct);
+
+    QMenu *RenderTool = toolsMenu->addMenu("Render Tools");
+    RenderTool->addAction("Refraction");
+    RenderTool->addAction("Alpha");
+    RenderTool->addAction("Shadow");
+    RenderTool->addAction("Cartoon");
+    RenderTool->addAction("Translucancy");
+    RenderTool->addAction("SM Quality");
+
 
     selectMenu  = menuBar()->addMenu(tr("Select"));
     selectMenu->addAction("Select All");
@@ -260,11 +283,13 @@ void MainWindow::createMenus()
     selectMenu->addAction("Grow Selection");
     selectMenu->addAction("Clear Selection");
 
-    renderMenu  = menuBar()->addMenu(tr("Render"));
-    renderMenu->addAction("Render Options");
-    renderMenu->addAction("Render");
 
-    helpMenu    = menuBar()->addMenu(tr("&Help"));
+    renderMenu = menuBar()->addMenu(tr("Render"));
+    renderMenu->addAction("Filter Size");
+    renderMenu->addAction("Toggle Point Light");
+    renderMenu->addAction("Enviroment Map");
+
+    helpMenu    = menuBar()->addMenu(tr("Help"));
     helpMenu->addAction(aboutAct);
 }
 
@@ -354,6 +379,7 @@ void MainWindow::selectDeleteFace()
 
 void MainWindow::selectInsertSegment()
 {
+    createCustomDialog("Insert Segment", "input1","input2","input3");
     MeshShape::setOPMODE(MeshShape::INSERT_SEGMENT);
     unselectDrag();
 }
@@ -386,12 +412,20 @@ void MainWindow::toggleShading(){
     glWidget->updateGL();
 }
 
+void MainWindow::toggleAmbient(){
+    glWidget->updateGL();
+}
+
+void MainWindow::toggleShadow(){
+    glWidget->updateGL();
+}
 
 
 //Shape Menu Call backs
 
 void MainWindow::new2NGon()
 {
+    createCustomDialog("Create NGon", "input1","input2","input3");
     MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::NGON);
     Canvas::get()->insert(pM);
     glWidget->updateGL();
@@ -399,6 +433,7 @@ void MainWindow::new2NGon()
 
 void MainWindow::newGrid()
 {
+    createCustomDialog("Create New Grid", "input1","input2","input3");
     MeshShape* pM = MeshShape::newMeshShape(Point(0,0), MeshShape::SQUARE);
     Canvas::get()->insert(pM);
     glWidget->updateGL();
@@ -406,8 +441,13 @@ void MainWindow::newGrid()
 
 void MainWindow::newSpine()
 {
+    createCustomDialog("Create New Grid", "input1","input2","input3");
     //MeshShape* pM = MeshShape::newMeshShape(Point(0,0),MeshShape::SPINE);
     //Canvas::get()->insert(pM);
+
+    MeshShape* pM = new FacialShape();
+    Canvas::get()->insert(pM);
+    glWidget->updateGL();
 }
 
 void MainWindow::toggleLockShape(){
@@ -459,6 +499,27 @@ void MainWindow::sendShapeBack(){
 void MainWindow::sendShapeFront(){
     Canvas::get()->sendToFront();
     glWidget->updateGL();
+}
+
+void MainWindow::createCustomDialog(QString title, QString input1,QString input2,QString input3)
+{
+    string  Value0 = "Value";            // NOTE: these lines of code (the variables you wish to change)
+    bool    Value1  = true;                //  probably exist in your program already and so it is only
+    int     Value2      = 20;                  //  the seven lines below needed to "create and display"
+    int     Value3 = 1;                   //  your custom dialog.
+
+    CustomDialog d(title, this);                            // We want our custom dialog called "Registration".
+    d.addLabel    ("Please enter the details below ...");           // The first element is just a text label (non interactive).
+    d.addLineEdit (input1+"  ", &Value0, "No middle name!");             // Here's a line edit.
+    d.addCheckBox (input2+"  ", &Value1, "my tooltip");       // Here's a checkbox with a tooltip (optional last argument).
+    d.addSpinBox  (input3+"  ", 1, 120, &Value2, 1);                   // Here's a number spin box for age.
+    d.addComboBox ("Value: ", "Value1|Value2|Value3", &Value3);   // And here's a combo box with three options (separated by '|').
+
+    d.exec();                             // Execution stops here until user closes dialog
+
+    if(d.wasCancelled())                // If the user hit cancel, your values stay the same
+        return;                           // and you probably don't need to do anything
+//     cout << "Thanks " << name << end;   // and here it's up to you to do stuff with your new values!
 }
 
 

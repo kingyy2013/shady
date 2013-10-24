@@ -77,6 +77,8 @@ private slots:
     void toggleNormals();
     void togglePathces();
     void toggleShading();
+    void toggleAmbient();
+    void toggleShadow();
 
     void newGrid();
     void new2NGon();
@@ -97,7 +99,7 @@ private:
     void createMenus();
     void initScene();
     void initTools();
-
+    void createCustomDialog(QString title, QString input1,QString input2,QString input3);
     QSize getSize();
 
     QWidget         *centralWidget;
@@ -128,6 +130,8 @@ private:
     QAction * patchesOnAct;
     QAction * normalsOnAct;
     QAction * shadingOnAct;
+    QAction * ambientOnAct;
+    QAction * shadowOnAct;
 
     //File Menu Actions
     QAction * fileNewAct;

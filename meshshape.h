@@ -8,7 +8,6 @@ using namespace dlfl;
 
 class MeshShape : public Shape
 {
-    Mesh_p _control;
     //void generateControlPoints();
 
     void insertSegment(Edge_p, const Point&);
@@ -27,7 +26,7 @@ class MeshShape : public Shape
 
 protected:
     //overridden functions
-    void render() const;
+    virtual void render() const;
     void onClick(const Point &, Click_e);
     void onUpdate();
     //void onOutdate();
@@ -38,6 +37,7 @@ protected:
     void execOP(const Point&);
 
 public:
+    Mesh_p _control;
 
     MeshShape(Mesh_p control = 0);
 

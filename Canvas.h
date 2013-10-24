@@ -36,6 +36,7 @@ public:
        isWireframeOn = false;
     }
 
+    void setImagePlane(const string &filename);
     void render() const;
     void render(Shape_p) const;
 

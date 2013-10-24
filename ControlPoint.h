@@ -165,6 +165,14 @@ public:
        _pPair = pair;
    }
 
+   void setTangent(const Vec2 &tan, bool bothpairs=false){
+       pP()->set(parent()->P()+tan);
+       if (bothpairs && _pPair){
+           _pPair->pP()->set(parent()->P()-tan);
+       }
+   }
+
+   Vec2 getTangent() const { return P() - parent()->P();}
 };
 
 
